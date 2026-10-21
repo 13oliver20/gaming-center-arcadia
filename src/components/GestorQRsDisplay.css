@@ -1,0 +1,162 @@
+.qr-display-widget {
+    position: fixed;
+    width: 320px;
+    background: rgba(10, 15, 25, 0.75);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(0, 255, 170, 0.15);
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5), 0 0 20px rgba(0, 255, 170, 0.05);
+    color: #fff;
+    font-family: 'Inter', sans-serif;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    animation: fadeInQR 0.8s ease-out;
+}
+
+@keyframes fadeInQR {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+.qr-tabs {
+    display: flex;
+    gap: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 12px;
+}
+
+.qr-tab {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.5);
+    padding: 10px 0;
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 1px;
+    cursor: pointer;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all 0.2s ease-in-out;
+}
+
+.qr-tab-icon {
+    font-size: 1.1rem;
+}
+
+.qr-tab:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.9);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.qr-tab.active.whatsapp {
+    color: #25D366;
+    /* WhatsApp Green */
+    border-color: rgba(37, 211, 102, 0.4);
+    background: rgba(37, 211, 102, 0.08);
+    box-shadow: 0 0 12px rgba(37, 211, 102, 0.3) inset;
+}
+
+.qr-tab.active.wifi {
+    color: #00ffaa;
+    /* Arcadia Neon Green/Blue */
+    border-color: rgba(0, 255, 170, 0.4);
+    background: rgba(0, 255, 170, 0.08);
+    box-shadow: 0 0 12px rgba(0, 255, 170, 0.3) inset;
+}
+
+.qr-content-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+
+.qr-image-wrapper {
+    width: 200px;
+    height: 200px;
+    background: #fff;
+    border-radius: 12px;
+    padding: 10px;
+    box-shadow: 0 0 30px rgba(0, 255, 170, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+    /* Subtle neon pulse behind the QR */
+}
+
+.qr-image-wrapper::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(0, 255, 170, 0.2) 0%, transparent 60%);
+    z-index: 0;
+    animation: neonPulse 4s infinite alternate;
+}
+
+@keyframes neonPulse {
+    0% {
+        opacity: 0.5;
+        transform: scale(0.9);
+    }
+
+    100% {
+        opacity: 1;
+        transform: scale(1.1);
+    }
+}
+
+.qr-img {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    border-radius: 8px;
+}
+
+.qr-placeholder {
+    color: #333;
+    font-weight: bold;
+    font-size: 0.9rem;
+    position: relative;
+    z-index: 1;
+}
+
+.qr-text-info {
+    text-align: center;
+    width: 100%;
+}
+
+.qr-text-info h3 {
+    color: #fff;
+    font-size: 1.1rem;
+    margin: 0 0 8px 0;
+    font-weight: 600;
+}
+
+.qr-text-info p {
+    color: #00ffaa;
+    font-size: 0.9rem;
+    margin: 4px 0;
+    opacity: 0.9;
+}
+
+.qr-text-info strong {
+    color: rgba(255, 255, 255, 0.6);
+    font-weight: normal;
+    margin-right: 4px;
+}

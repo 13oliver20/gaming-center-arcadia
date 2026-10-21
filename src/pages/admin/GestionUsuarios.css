@@ -1,0 +1,565 @@
+/* ===== PAGE ===== */
+.gu-page {
+    padding: 28px 28px;
+    max-width: 1000px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* Header */
+.gu-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.gu-header-icon {
+    font-size: 1.4rem;
+}
+
+.gu-title {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #00c8ff;
+    margin: 0;
+    flex: 1;
+}
+
+.gu-count {
+    font-size: 0.82rem;
+    color: rgba(255, 255, 255, 0.35);
+    letter-spacing: 0.04em;
+}
+
+/* Form row */
+.gu-form-row {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.gu-input {
+    flex: 1;
+    padding: 11px 16px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(0, 200, 255, 0.18);
+    border-radius: 8px;
+    color: #fff;
+    font-size: 0.95rem;
+    outline: none;
+    transition: border-color 0.2s;
+    font-family: inherit;
+}
+
+.gu-input::placeholder {
+    color: rgba(255, 255, 255, 0.3);
+}
+
+.gu-input:focus {
+    border-color: rgba(0, 200, 255, 0.55);
+    background: rgba(0, 200, 255, 0.04);
+}
+
+.gu-add-btn {
+    width: 42px;
+    height: 42px;
+    background: #00c8ff;
+    color: #05050f;
+    font-size: 1.5rem;
+    font-weight: 700;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s, transform 0.15s;
+    flex-shrink: 0;
+}
+
+.gu-add-btn:hover {
+    background: #33d4ff;
+    transform: scale(1.07);
+}
+
+/* ===== SEARCH BAR ===== */
+.gu-search-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(0, 200, 255, 0.2);
+    border-radius: 10px;
+    transition: border-color 0.2s, background 0.2s;
+}
+
+.gu-search-bar:focus-within {
+    border-color: rgba(0, 200, 255, 0.5);
+    background: rgba(0, 200, 255, 0.04);
+}
+
+.gu-search-icon {
+    font-size: 1rem;
+    flex-shrink: 0;
+    opacity: 0.7;
+}
+
+.gu-search-input {
+    flex: 1;
+    background: none;
+    border: none;
+    outline: none;
+    color: #fff;
+    font-size: 0.93rem;
+    font-family: inherit;
+}
+
+.gu-search-input::placeholder {
+    color: rgba(255, 255, 255, 0.3);
+}
+
+.gu-search-clear {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 0.9rem;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 4px;
+    flex-shrink: 0;
+    transition: color 0.15s, background 0.15s;
+    font-family: inherit;
+}
+
+.gu-search-clear:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+
+
+/* ===== TOOLBAR ===== */
+.gu-toolbar {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.gu-toolbar-btn {
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: inherit;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s;
+    border: 1px solid transparent;
+}
+
+.gu-toolbar-btn.import {
+    background: rgba(0, 200, 255, 0.1);
+    color: #00c8ff;
+    border-color: rgba(0, 200, 255, 0.2);
+}
+
+.gu-toolbar-btn.import:hover:not(:disabled) {
+    background: rgba(0, 200, 255, 0.2);
+    transform: translateY(-2px);
+}
+
+.gu-toolbar-btn.export {
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.9);
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+.gu-toolbar-btn.export:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateY(-2px);
+}
+
+.gu-toolbar-btn.danger {
+    background: rgba(220, 38, 38, 0.15);
+    color: #ef4444;
+    border-color: rgba(220, 38, 38, 0.3);
+    margin-left: auto;
+    /* Push to the right edge */
+}
+
+.gu-toolbar-btn.danger:hover:not(:disabled) {
+    background: rgba(220, 38, 38, 0.3);
+    transform: translateY(-2px);
+}
+
+.gu-toolbar-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ===== TABLE ===== */
+.gu-table-wrap {
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid rgba(0, 200, 255, 0.12);
+}
+
+.gu-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+}
+
+.gu-table thead tr {
+    background: rgba(0, 200, 255, 0.08);
+}
+
+.gu-table th {
+    padding: 12px 16px;
+    text-align: left;
+    color: rgba(0, 200, 255, 0.8);
+    font-weight: 600;
+    font-size: 0.78rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    border-bottom: 1px solid rgba(0, 200, 255, 0.12);
+}
+
+.gu-table tbody tr {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    transition: background 0.15s;
+}
+
+.gu-table tbody tr:last-child {
+    border-bottom: none;
+}
+
+.gu-table tbody tr:hover {
+    background: rgba(0, 200, 255, 0.05);
+}
+
+.gu-table td {
+    padding: 11px 16px;
+    color: rgba(255, 255, 255, 0.82);
+    vertical-align: middle;
+}
+
+.gu-td-num {
+    color: rgba(255, 255, 255, 0.3);
+    width: 48px;
+    font-size: 0.8rem;
+}
+
+.gu-td-nick {
+    color: #00c8ff;
+}
+
+.gu-td-date {
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 0.82rem;
+    white-space: nowrap;
+}
+
+.gu-td-empty {
+    text-align: center;
+    padding: 40px;
+    color: rgba(255, 255, 255, 0.3);
+}
+
+.gu-td-actions {
+    width: 90px;
+}
+
+.gu-icon-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    padding: 5px 7px;
+    border-radius: 6px;
+    transition: background 0.15s, transform 0.12s;
+    line-height: 1;
+}
+
+.gu-icon-btn:hover {
+    transform: scale(1.2);
+}
+
+.gu-icon-btn.edit:hover {
+    background: rgba(0, 200, 255, 0.15);
+}
+
+.gu-icon-btn.delete:hover {
+    background: rgba(220, 38, 38, 0.18);
+}
+
+/* ===== PAGINATION ===== */
+.gu-pagination-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    margin-top: 5px;
+}
+
+.gu-records-info {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.9rem;
+}
+
+.gu-pagination {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.gu-page-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #fff;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+}
+
+.gu-page-btn:hover:not(:disabled) {
+    background: rgba(0, 200, 255, 0.15);
+    border-color: rgba(0, 200, 255, 0.3);
+    color: #00c8ff;
+}
+
+.gu-page-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.gu-page-info {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.9rem;
+}
+
+/* ===== DIALOGS ===== */
+.gu-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(6px);
+    z-index: 9000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: gu-fade-in 0.18s ease;
+}
+
+@keyframes gu-fade-in {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.gu-dialog {
+    background: linear-gradient(160deg, #0f0f24, #0a0a1e);
+    border: 1px solid rgba(0, 200, 255, 0.25);
+    border-radius: 16px;
+    padding: 32px 36px;
+    min-width: 360px;
+    max-width: 440px;
+    width: 90%;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.7);
+    animation: gu-slide-up 0.22s ease;
+}
+
+.gu-dialog-delete {
+    border-color: rgba(220, 38, 38, 0.35);
+}
+
+@keyframes gu-slide-up {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.gu-dialog-icon {
+    font-size: 2rem;
+    text-align: center;
+}
+
+.gu-dialog-title {
+    margin: 0;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #fff;
+    text-align: center;
+}
+
+.gu-dialog-body p {
+    margin: 0 0 10px;
+    color: rgba(255, 255, 255, 0.55);
+    font-size: 0.9rem;
+    text-align: center;
+}
+
+.gu-dialog-preview {
+    background: rgba(0, 200, 255, 0.07);
+    border: 1px solid rgba(0, 200, 255, 0.18);
+    border-radius: 10px;
+    padding: 14px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.75);
+}
+
+.gu-dialog-preview strong {
+    color: rgba(255, 255, 255, 0.4);
+    font-weight: 500;
+    margin-right: 6px;
+}
+
+.gu-warn-text {
+    color: #f87171 !important;
+    font-size: 0.82rem !important;
+    margin-top: 8px !important;
+}
+
+/* Edit dialog body */
+.edit-body {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.edit-body label {
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.45);
+    letter-spacing: 0.04em;
+    margin-bottom: -4px;
+}
+
+.edit-body .gu-input {
+    flex: none;
+}
+
+.gu-dialog-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+.gu-btn-cancel {
+    padding: 10px 22px;
+    background: rgba(255, 255, 255, 0.07);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.9rem;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.18s;
+}
+
+.gu-btn-cancel:hover {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.gu-btn-confirm {
+    padding: 10px 24px;
+    background: #00c8ff;
+    border: none;
+    border-radius: 8px;
+    color: #05050f;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.18s, transform 0.15s;
+}
+
+.gu-btn-confirm:hover {
+    background: #33d4ff;
+    transform: scale(1.03);
+}
+
+.gu-btn-danger {
+    padding: 10px 24px;
+    background: #dc2626;
+    border: none;
+    border-radius: 8px;
+    color: #fff;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.18s;
+}
+
+.gu-btn-danger:hover {
+    background: #ef4444;
+}
+
+.gu-btn-confirm:disabled,
+.gu-btn-cancel:disabled,
+.gu-btn-danger:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* ===== TOAST ===== */
+.gu-toast {
+    position: fixed;
+    bottom: 28px;
+    right: 28px;
+    padding: 12px 22px;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    z-index: 9999;
+    animation: gu-toast-in 0.3s ease;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+}
+
+.gu-toast-success {
+    background: #065f46;
+    color: #6ee7b7;
+    border: 1px solid #059669;
+}
+
+.gu-toast-error {
+    background: #7f1d1d;
+    color: #fca5a5;
+    border: 1px solid #dc2626;
+}
+
+@keyframes gu-toast-in {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}

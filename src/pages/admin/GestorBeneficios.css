@@ -1,0 +1,316 @@
+.gb-page {
+    padding: 2rem;
+    color: white;
+    font-family: 'Inter', sans-serif;
+    animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.gb-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 2rem;
+}
+
+.gb-title {
+    font-size: 2rem;
+    font-weight: 800;
+    margin: 0;
+    background: linear-gradient(90deg, #fff, #a0a0a0);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -0.5px;
+}
+
+.gb-subtitle {
+    color: #8892b0;
+    margin-top: 0.5rem;
+    font-size: 1rem;
+}
+
+/* INPUT AREA */
+.gb-input-area {
+    background: rgba(17, 25, 40, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    backdrop-filter: blur(10px);
+}
+
+.gb-textarea {
+    width: 100%;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 1rem;
+    color: white;
+    font-family: inherit;
+    font-size: 1rem;
+    resize: vertical;
+    min-height: 80px;
+    outline: none;
+    transition: all 0.2s ease;
+}
+
+.gb-textarea:focus {
+    border-color: #00e5ff;
+    box-shadow: 0 0 0 2px rgba(0, 229, 255, 0.2);
+}
+
+.gb-btn-add {
+    align-self: flex-end;
+    background: #00e5ff;
+    color: #000;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.gb-btn-add:hover:not(:disabled) {
+    background: #00b8cc;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 229, 255, 0.3);
+}
+
+.gb-btn-add:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* LIST AREA */
+.gb-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.gb-empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px dashed rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    color: #8892b0;
+}
+
+.gb-empty-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+.gb-card {
+    background: rgba(17, 25, 40, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 1rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: transform 0.2s, border-color 0.2s;
+}
+
+.gb-card:hover {
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+}
+
+.gb-card-text {
+    flex: 1;
+    font-size: 1.1rem;
+    line-height: 1.4;
+    margin-right: 1.5rem;
+    word-break: break-word;
+}
+
+/* ACTIONS */
+.gb-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.gb-icon-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: white;
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    font-size: 1.2rem;
+    transition: all 0.2s;
+}
+
+.gb-icon-btn:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.15);
+    transform: scale(1.05);
+}
+
+.gb-icon-btn.edit:hover {
+    border-color: #ffd600;
+    color: #ffd600;
+}
+
+.gb-icon-btn.delete:hover {
+    border-color: #ff4eb8;
+    background: rgba(255, 78, 184, 0.1);
+}
+
+.gb-icon-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* MODALS */
+.gb-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(5px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    animation: fadeIn 0.2s;
+}
+
+.gb-dialog {
+    background: #111928;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 2rem;
+    max-width: 500px;
+    width: 90%;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+    text-align: center;
+}
+
+.gb-dialog-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.gb-dialog-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.gb-dialog-body {
+    color: #8892b0;
+    margin-bottom: 1.5rem;
+}
+
+.gb-dialog-actions {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+}
+
+.gb-btn-cancel {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.gb-btn-cancel:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.gb-btn-confirm {
+    background: #00e5ff;
+    color: #000;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.gb-btn-confirm:hover {
+    background: #00b8cc;
+}
+
+.gb-btn-danger {
+    background: #ff4eb8;
+    color: #fff;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.gb-btn-danger:hover {
+    background: #d81b60;
+}
+
+/* Toast (reusing style from GA but scoped if needed, or inline) */
+.gb-toast {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    z-index: 10000;
+    animation: slideUp 0.3s ease-out;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.gb-toast-success {
+    background: #00e676;
+    color: #000;
+}
+
+.gb-toast-error {
+    background: #ff4eb8;
+    color: #fff;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}

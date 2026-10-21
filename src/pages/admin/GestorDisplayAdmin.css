@@ -1,0 +1,446 @@
+/* ── GestorDisplayAdmin.css ── */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+@import url('../../pages/Display.css');
+
+/* ─── EFFECT CARDS GRID ───────────────────────────── */
+.gda-effects-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-top: 4px;
+}
+@media (max-width: 640px) {
+    .gda-effects-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+.gda-effect-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 14px 8px 12px;
+    border-radius: 12px;
+    border: 1.5px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.03);
+    cursor: pointer;
+    transition: border-color 0.2s ease, background 0.2s ease, transform 0.15s ease;
+    font-family: 'Inter', sans-serif;
+    overflow: hidden;
+}
+
+.gda-effect-card:hover {
+    border-color: rgba(0, 229, 255, 0.4);
+    background: rgba(0, 229, 255, 0.05);
+    transform: translateY(-2px);
+}
+
+.gda-effect-card.active {
+    border-color: #00e5ff;
+    background: rgba(0, 229, 255, 0.08);
+    box-shadow: 0 0 0 1px rgba(0, 229, 255, 0.3), 0 4px 20px rgba(0, 229, 255, 0.15);
+}
+
+.gda-effect-emoji {
+    font-size: 1.3rem;
+    line-height: 1;
+}
+
+.gda-effect-preview {
+    font-size: 0.72rem;
+    font-weight: 900;
+    letter-spacing: 0.02em;
+    text-align: center;
+    line-height: 1.2;
+    /* Override display.css positioning for preview use */
+    position: relative !important;
+    background-clip: text !important;
+    -webkit-background-clip: text !important;
+}
+
+.gda-effect-desc {
+    font-size: 0.68rem;
+    color: rgba(255, 255, 255, 0.4);
+    text-align: center;
+    line-height: 1.3;
+}
+
+.gda-effect-check {
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: #00e5ff;
+    text-shadow: 0 0 8px rgba(0, 229, 255, 0.6);
+}
+
+
+
+.gda-page {
+    font-family: 'Inter', sans-serif;
+    padding: 2rem;
+    color: #e0e6f0;
+    position: relative;
+    max-width: 900px;
+}
+
+/* ─── TOAST ───────────────────────────────── */
+.gda-toast {
+    position: fixed;
+    top: 24px;
+    right: 24px;
+    padding: 14px 22px;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    z-index: 9999;
+    animation: fadeInSlide 0.3s ease;
+    box-shadow: 0 6px 24px rgba(0,0,0,0.3);
+}
+.gda-toast-success { background: #0d2d20; border: 1px solid #00e676; color: #00e676; }
+.gda-toast-error   { background: #2d0d0d; border: 1px solid #ff5252; color: #ff5252; }
+@keyframes fadeInSlide {
+    from { opacity: 0; transform: translateY(-12px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── MODAL ───────────────────────────────── */
+.gda-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.72);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 999;
+    backdrop-filter: blur(6px);
+    animation: overlayIn 0.2s ease;
+}
+@keyframes overlayIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+.gda-dialog {
+    background: #0e1628;
+    border-radius: 18px;
+    padding: 2.2rem 2.6rem;
+    max-width: 420px;
+    width: 90%;
+    text-align: center;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.6);
+    animation: dialogIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    position: relative;
+    overflow: hidden;
+}
+@keyframes dialogIn {
+    from { opacity: 0; transform: scale(0.88) translateY(12px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* Línea superior de color según tipo */
+.gda-dialog::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    border-radius: 18px 18px 0 0;
+}
+.gda-dialog--save {
+    border: 1px solid rgba(0, 200, 255, 0.25);
+}
+.gda-dialog--save::before {
+    background: linear-gradient(90deg, #00c6ff, #0072ff);
+}
+.gda-dialog--danger {
+    border: 1px solid rgba(255, 140, 0, 0.28);
+}
+.gda-dialog--danger::before {
+    background: linear-gradient(90deg, #ff8c00, #ff3d00);
+}
+
+.gda-dialog-icon  {
+    font-size: 2.4rem;
+    margin-bottom: 0.6rem;
+    line-height: 1;
+}
+.gda-dialog-title {
+    font-size: 1.25rem;
+    font-weight: 800;
+    margin: 0 0 0.7rem;
+    color: #fff;
+}
+.gda-dialog-title--danger { color: #ffaa44; }
+.gda-dialog-body {
+    color: rgba(255,255,255,0.58);
+    font-size: 0.9rem;
+    margin-bottom: 1.6rem;
+    line-height: 1.6;
+}
+.gda-dialog-panel-name       { color: #00e5ff; }
+.gda-dialog-panel-name--danger { color: #ff9944; }
+.gda-dialog-hint {
+    font-size: 0.78rem;
+    color: rgba(255,255,255,0.3);
+    display: block;
+    margin-top: 6px;
+}
+.gda-dialog-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+}
+.gda-btn-cancel {
+    padding: 11px 24px; border-radius: 10px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.12);
+    color: rgba(255,255,255,0.55);
+    font-weight: 600; font-size: 0.9rem;
+    cursor: pointer; transition: all 0.2s;
+}
+.gda-btn-cancel:hover { background: rgba(255,255,255,0.1); color: #fff; }
+.gda-btn-cancel:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Confirmar — variante guardar (azul) */
+.gda-btn-confirm--save {
+    padding: 11px 24px; border-radius: 10px;
+    background: linear-gradient(135deg, #00c6ff, #0072ff);
+    border: none; color: #fff; font-weight: 700; font-size: 0.9rem;
+    cursor: pointer;
+    box-shadow: 0 4px 18px rgba(0,114,255,0.4);
+    transition: transform 0.15s, box-shadow 0.15s;
+}
+.gda-btn-confirm--save:hover  { transform: translateY(-1px); box-shadow: 0 6px 24px rgba(0,114,255,0.55); }
+.gda-btn-confirm--save:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+/* Confirmar — variante deshacer (naranja) */
+.gda-btn-confirm--danger {
+    padding: 11px 24px; border-radius: 10px;
+    background: linear-gradient(135deg, #ff8c00, #ff3d00);
+    border: none; color: #fff; font-weight: 700; font-size: 0.9rem;
+    cursor: pointer;
+    box-shadow: 0 4px 18px rgba(255,61,0,0.4);
+    transition: transform 0.15s, box-shadow 0.15s;
+}
+.gda-btn-confirm--danger:hover  { transform: translateY(-1px); box-shadow: 0 6px 24px rgba(255,61,0,0.55); }
+.gda-btn-confirm--danger:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+/* ─── HEADER ──────────────────────────────── */
+.gda-header-row { margin-bottom: 1.8rem; }
+.gda-title    { font-size: 1.55rem; font-weight: 800; margin: 0 0 0.2rem; color: #fff; }
+.gda-subtitle { font-size: 0.9rem; color: rgba(255,255,255,0.45); margin: 0; }
+.gda-loading  { color: rgba(255,255,255,0.4); padding: 2rem 0; font-style: italic; }
+
+/* ─── CONTENT GRID ────────────────────────── */
+.gda-content { display: flex; flex-direction: column; gap: 1.5rem; }
+
+.gda-card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 14px;
+    padding: 1.4rem 1.6rem;
+}
+.gda-card-title {
+    font-size: 0.95rem; font-weight: 700; color: #00e5ff;
+    margin: 0 0 1.1rem; letter-spacing: 0.5px;
+}
+
+/* ─── PREVIEW ─────────────────────────────── */
+.gda-preview-screen {
+    background: #05050f;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 10px;
+    position: relative;
+    overflow: hidden;
+    margin: 0 auto 1rem;
+}
+.gda-preview-dot {
+    position: absolute;
+    background: linear-gradient(135deg, rgba(0,255,170,0.25), rgba(0,229,255,0.15));
+    border: 2px solid rgba(0,255,170,0.7);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 0 12px rgba(0,255,170,0.4);
+    transition: left 0.2s, top 0.2s, width 0.2s, height 0.2s;
+}
+.gda-preview-label {
+    font-size: 0.7rem; font-weight: 800; color: #00ffaa; letter-spacing: 1px;
+}
+.gda-coords {
+    display: flex; gap: 1.2rem; justify-content: center;
+    font-size: 0.85rem; color: rgba(255,255,255,0.5);
+}
+.gda-coords strong { color: #fff; }
+
+/* ─── CONTROLS GRID ───────────────────────── */
+.gda-controls-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.2rem;
+}
+@media (max-width: 600px) { .gda-controls-grid { grid-template-columns: 1fr; } }
+
+/* ─── D-PAD ───────────────────────────────── */
+.gda-dpad {
+    display: grid;
+    grid-template-columns: repeat(3, 44px);
+    grid-template-rows: repeat(3, 44px);
+    gap: 6px;
+    justify-content: center;
+    margin-bottom: 0.8rem;
+}
+.gda-dir-btn {
+    width: 44px; height: 44px;
+    background: rgba(0,229,255,0.1);
+    border: 1px solid rgba(0,229,255,0.3);
+    border-radius: 8px;
+    color: #00e5ff;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+    display: flex; align-items: center; justify-content: center;
+}
+.gda-dir-btn:hover { background: rgba(0,229,255,0.22); transform: scale(1.08); }
+.gda-dir-btn:active { transform: scale(0.95); }
+.gda-dpad-center {
+    display: flex; align-items: center; justify-content: center;
+    color: rgba(255,255,255,0.2); font-size: 1.3rem;
+}
+.gda-hint { font-size: 0.78rem; color: rgba(255,255,255,0.3); margin: 0; text-align: center; }
+
+/* ─── SCALE ───────────────────────────────── */
+.gda-scale-controls {
+    display: flex; align-items: center; justify-content: center; gap: 1rem;
+    margin-bottom: 0.8rem;
+}
+.gda-scale-btn {
+    width: 44px; height: 44px;
+    background: rgba(0,229,255,0.1);
+    border: 1px solid rgba(0,229,255,0.3);
+    border-radius: 8px;
+    color: #00e5ff;
+    font-size: 1.4rem; font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+}
+.gda-scale-btn:hover:not(:disabled) { background: rgba(0,229,255,0.22); transform: scale(1.08); }
+.gda-scale-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.gda-scale-display {
+    display: flex; align-items: baseline; gap: 3px;
+}
+.gda-scale-val { font-size: 2rem; font-weight: 800; color: #fff; }
+.gda-scale-lbl { font-size: 1rem; color: rgba(255,255,255,0.4); }
+
+.gda-scale-bar-wrap {
+    height: 6px; background: rgba(255,255,255,0.08);
+    border-radius: 3px; overflow: hidden; margin-bottom: 0.6rem;
+}
+.gda-scale-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #00e5ff, #00ffaa);
+    border-radius: 3px;
+    transition: width 0.2s;
+}
+
+/* ─── ACTION BUTTONS ──────────────────────── */
+.gda-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-top: 4px;
+}
+
+/* Badge de cambios sin guardar */
+.gda-unsaved-badge {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #ffaa44;
+    letter-spacing: 0.03em;
+    margin-right: auto;
+    animation: badgePulse 2s ease-in-out infinite;
+}
+@keyframes badgePulse {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.5; }
+}
+
+.gda-btn-reset {
+    padding: 12px 22px; border-radius: 10px;
+    background: rgba(255,140,0,0.07);
+    border: 1px solid rgba(255,140,0,0.2);
+    color: rgba(255,180,60,0.8);
+    font-weight: 600; font-size: 0.88rem;
+    cursor: pointer; transition: all 0.2s;
+}
+.gda-btn-reset:hover:not(:disabled) {
+    background: rgba(255,140,0,0.14);
+    border-color: rgba(255,140,0,0.45);
+    color: #ffaa44;
+    box-shadow: 0 0 12px rgba(255,140,0,0.2);
+}
+.gda-btn-reset:disabled { opacity: 0.28; cursor: not-allowed; }
+
+.gda-btn-save {
+    padding: 12px 26px; border-radius: 10px;
+    background: rgba(0, 114, 255, 0.12);
+    border: 1px solid rgba(0,114,255,0.25);
+    color: rgba(100,180,255,0.7);
+    font-weight: 700; font-size: 0.88rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.gda-btn-save--active {
+    background: linear-gradient(135deg, #00c6ff 0%, #0072ff 100%);
+    border-color: transparent;
+    color: #fff;
+    box-shadow: 0 4px 18px rgba(0,114,255,0.45);
+    animation: savePulse 2.5s ease-in-out infinite;
+}
+@keyframes savePulse {
+    0%, 100% { box-shadow: 0 4px 18px rgba(0,114,255,0.45); }
+    50%       { box-shadow: 0 4px 28px rgba(0,114,255,0.7); }
+}
+.gda-btn-save--active:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 28px rgba(0,114,255,0.6);
+    animation: none;
+}
+.gda-btn-save:disabled { opacity: 0.28; cursor: not-allowed; transform: none; box-shadow: none; animation: none; }
+
+/* ─── TWO PANELS LAYOUT ───────────────────────────── */
+.gda-two-panels {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.gda-panel-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+    padding: 1.2rem 0;
+}
+
+.gda-section-title {
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: #fff;
+    margin: 0;
+    padding-bottom: 0.6rem;
+    border-bottom: 1px solid rgba(0, 229, 255, 0.2);
+}
+
+.gda-divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+    margin: 0.5rem 0;
+}
+
+.gda-card h4.gda-card-title {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: #00e5ff;
+    margin: 0 0 0.9rem;
+    letter-spacing: 0.4px;
+}
+

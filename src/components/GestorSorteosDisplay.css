@@ -1,0 +1,326 @@
+.gsd-widget {
+    position: fixed;
+    width: 320px;
+    background: rgba(10, 15, 25, 0.75);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 0, 170, 0.2);
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5), 0 0 20px rgba(255, 0, 170, 0.05);
+    color: #fff;
+    font-family: 'Inter', sans-serif;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    animation: fadeInSorteos 0.8s ease-out;
+}
+
+@keyframes fadeInSorteos {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+.gsd-tabs {
+    display: flex;
+    gap: 5px;
+}
+
+.gsd-tab {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.5);
+    padding: 10px 0;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    cursor: pointer;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all 0.2s ease-in-out;
+}
+
+.gsd-tab:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.9);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.gsd-tab.active.diarios {
+    border-color: #ff00aa;
+    color: #ff00aa;
+    background: rgba(255, 0, 170, 0.08);
+    box-shadow: 0 0 12px rgba(255, 0, 170, 0.3) inset;
+}
+
+.gsd-tab.active.mensuales {
+    border-color: #ffd700;
+    color: #ffd700;
+    background: rgba(255, 215, 0, 0.08);
+    box-shadow: 0 0 12px rgba(255, 215, 0, 0.3) inset;
+}
+
+.gsd-icon {
+    font-size: 1rem;
+}
+
+.gsd-beneficios-btn {
+    width: 100%;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: rgba(255, 255, 255, 0.8);
+    padding: 12px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s ease-in-out;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.gsd-beneficios-btn:hover {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3), 0 0 10px rgba(255, 215, 0, 0.1);
+}
+
+.gsd-beneficios-btn.active {
+    background: linear-gradient(135deg, rgba(0, 229, 255, 0.12) 0%, rgba(0, 229, 255, 0.06) 100%);
+    border-color: rgba(0, 229, 255, 0.5);
+    color: #00e5ff;
+    box-shadow: 0 0 14px rgba(0, 229, 255, 0.2) inset;
+}
+
+.gsd-beneficios-btn {
+    justify-content: space-between;
+}
+
+.gsd-beneficios-arrow {
+    font-size: 0.65rem;
+    opacity: 0.7;
+}
+
+.gsd-beneficios-panel {
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(0, 229, 255, 0.2);
+    border-radius: 6px;
+    padding: 14px 16px;
+    animation: fadeInDown 0.2s ease-out;
+}
+
+@keyframes fadeInDown {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.gsd-beneficios-texto {
+    color: rgba(255, 255, 255, 0.88);
+    font-size: 0.85rem;
+    line-height: 1.6;
+    margin: 0;
+    white-space: pre-wrap;
+}
+
+.gsd-beneficios-empty {
+    color: rgba(255, 255, 255, 0.35);
+    font-size: 0.8rem;
+    font-style: italic;
+    margin: 0;
+    text-align: center;
+}
+
+.gsd-body {
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding-top: 15px;
+}
+
+.gsd-title {
+    text-align: center;
+    color: #ff00aa;
+    font-size: 1.1rem;
+    font-weight: 800;
+    letter-spacing: 1px;
+    margin: 0;
+}
+
+.gsd-date {
+    text-align: center;
+    color: #ff00aa;
+    font-size: 0.95rem;
+    font-weight: 600;
+    letter-spacing: 2px;
+    margin: 5px 0 20px 0;
+}
+
+.gsd-horarios-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.gsd-horario-card {
+    background: #111;
+    border-radius: 4px;
+    display: flex;
+    overflow: hidden;
+    position: relative;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.gsd-horario-accent {
+    width: 4px;
+    background: #ff00aa;
+    flex-shrink: 0;
+    box-shadow: 0 0 8px #ff00aa;
+}
+
+.gsd-horario-content {
+    flex: 1;
+    padding: 12px 15px;
+}
+
+.gsd-horario-time {
+    color: #ff00aa;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+}
+
+.gsd-winner-waiting {
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 0.85rem;
+    font-style: italic;
+}
+
+.gsd-winner-name {
+    color: #fff;
+    font-size: 0.95rem;
+    font-weight: 700;
+    text-shadow: 0 0 5px rgba(255, 255, 255, 0.3);
+}
+
+/* MENSUALES ESPECÍFICO */
+.gsd-mensual-accent {
+    width: 4px;
+    background: #ff00aa;
+    /* Default */
+    flex-shrink: 0;
+}
+
+.gsd-mensual-pos {
+    color: #ff00aa;
+    /* Default */
+    font-size: 0.70rem;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    margin-bottom: 2px;
+}
+
+.gsd-mensual-puntos {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.gsd-pts-val {
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: #ffd700;
+    /* Default matches gold but overrides below */
+}
+
+.gsd-pts-lbl {
+    font-size: 0.6rem;
+    color: rgba(255, 255, 255, 0.5);
+    letter-spacing: 1px;
+}
+
+/* COLORES POR POSICIÓN MENSUAL (SIMILAR AL ADMIN) */
+/* 1ro - Oro */
+.pos-1 .gsd-mensual-accent {
+    background: #ffd700;
+    box-shadow: 0 0 8px #ffd700;
+}
+
+.pos-1 .gsd-mensual-pos {
+    color: #ffd700;
+}
+
+.pos-1 .gsd-pts-val {
+    color: #ffd700;
+}
+
+.pos-1 {
+    border-color: rgba(255, 215, 0, 0.2);
+}
+
+/* 2do - Plata */
+.pos-2 .gsd-mensual-accent {
+    background: #c0c0c0;
+    box-shadow: 0 0 8px #c0c0c0;
+}
+
+.pos-2 .gsd-mensual-pos {
+    color: #c0c0c0;
+}
+
+.pos-2 .gsd-pts-val {
+    color: #c0c0c0;
+}
+
+.pos-2 {
+    border-color: rgba(192, 192, 192, 0.2);
+}
+
+/* 3ro - Bronce */
+.pos-3 .gsd-mensual-accent {
+    background: #cd7f32;
+    box-shadow: 0 0 8px #cd7f32;
+}
+
+.pos-3 .gsd-mensual-pos {
+    color: #cd7f32;
+}
+
+.pos-3 .gsd-pts-val {
+    color: #cd7f32;
+}
+
+.pos-3 {
+    border-color: rgba(205, 127, 50, 0.2);
+}
+
+/* 4to y 5to - Rojo/Naranja */
+.pos-4 .gsd-mensual-accent,
+.pos-5 .gsd-mensual-accent {
+    background: #ff5e5e;
+    box-shadow: 0 0 8px #ff5e5e;
+}
+
+.pos-4 .gsd-mensual-pos,
+.pos-5 .gsd-mensual-pos {
+    color: #ff5e5e;
+}
+
+.pos-4,
+.pos-5 {
+    border-color: rgba(255, 94, 94, 0.2);
+}

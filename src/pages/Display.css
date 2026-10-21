@@ -1,0 +1,614 @@
+.display-page {
+    width: 100vw;
+    height: 100vh;
+    background: #05050f;
+    overflow: hidden;
+    margin: 0;
+    padding: 0;
+    position: fixed;
+    top: 0;
+    left: 0;
+}
+
+.particle-canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    /* Show the normal cursor */
+    cursor: default;
+    /* Cyan border glow like the reference */
+    box-shadow: inset 0 0 60px 8px rgba(0, 200, 255, 0.12),
+        inset 0 0 120px 20px rgba(0, 100, 200, 0.07);
+}
+
+/* Contenedor principal para alinear el logo y el texto en columna */
+.glow-container-wrapper {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    z-index: 10;
+    pointer-events: none;
+}
+
+@keyframes floatGlow {
+    0% {
+        transform: translateY(0px);
+        filter: brightness(0) invert(1) drop-shadow(0 0 15px rgba(255, 255, 255, 0.4));
+    }
+    50% {
+        transform: translateY(-15px);
+        filter: brightness(0) invert(1) drop-shadow(0 0 35px rgba(255, 255, 255, 0.8));
+    }
+    100% {
+        transform: translateY(0px);
+        filter: brightness(0) invert(1) drop-shadow(0 0 15px rgba(255, 255, 255, 0.4));
+    }
+}
+
+.glow-logo {
+    width: 250px;
+    height: auto;
+    animation: floatGlow 4s ease-in-out infinite;
+    user-select: none;
+}
+
+.glow-text-container {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transform: scale(1.25);
+}
+
+
+/* ============================================================
+   TEXTO GLOW — Keyframes de efectos
+   ============================================================ */
+
+/* ── Efecto 1: RGB Flow (original) ── */
+@keyframes rgbFlow {
+    0%   { background-position: 0% 50%; }
+    100% { background-position: 200% 50%; }
+}
+
+/* ── Efecto 2: Neon Pulse ── */
+@keyframes neonPulse {
+    0%, 100% {
+        text-shadow:
+            0 0 8px #fff,
+            0 0 20px #00e5ff,
+            0 0 40px #00e5ff,
+            0 0 80px #ff4eb8;
+    }
+    50% {
+        text-shadow:
+            0 0 4px #fff,
+            0 0 10px #00e5ff,
+            0 0 20px #00e5ff,
+            0 0 40px #ff4eb8;
+    }
+}
+
+/* ── Efecto 3: Plasma ── */
+@keyframes plasmaFlow {
+    0%   { background-position: 0% 50%; }
+    50%  { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* ── Efecto 4: Glitch ── */
+@keyframes glitchShift {
+    0%,  90%, 100% { clip-path: inset(0 0 0 0); transform: translate(0); }
+    91% { clip-path: inset(10% 0 60% 0); transform: translate(-4px, 2px); }
+    93% { clip-path: inset(50% 0 10% 0); transform: translate(4px, -2px); }
+    95% { clip-path: inset(30% 0 40% 0); transform: translate(-2px, 1px); }
+    97% { clip-path: inset(70% 0 5% 0);  transform: translate(3px, -1px); }
+}
+@keyframes glitchShift2 {
+    0%,  90%, 100% { clip-path: inset(0 0 0 0); transform: translate(0); }
+    92% { clip-path: inset(60% 0 10% 0); transform: translate(4px, -1px); }
+    94% { clip-path: inset(20% 0 50% 0); transform: translate(-3px, 2px); }
+    96% { clip-path: inset(5% 0 70% 0);  transform: translate(2px, -2px); }
+    98% { clip-path: inset(40% 0 30% 0); transform: translate(-4px, 1px); }
+}
+
+/* ── Efecto 5: Fire ── */
+@keyframes fireShimmer {
+    0%   { background-position: 50% 100%; }
+    100% { background-position: 50% -100%; }
+}
+
+/* ── Efecto 6: Chrome ── */
+@keyframes chromeSheen {
+    0%   { background-position: -200% 0%; }
+    100% { background-position: 200% 0%; }
+}
+
+/* ============================================================
+   BASE — común a todos los efectos
+   ============================================================ */
+.glow-text-layer {
+    font-family: 'Inter', sans-serif;
+    font-size: clamp(2.25rem, 5vw, 4.5rem);
+    font-weight: 900;
+    letter-spacing: -0.05em;
+    line-height: 0.95;
+    margin: 0;
+    padding: 0;
+    padding-bottom: 0.5rem;
+    user-select: none;
+    display: block;
+}
+
+/* ============================================================
+   EFECTO 1 — RGB Flow (original, por defecto)
+   ============================================================ */
+.text-effect-rgb-flow {
+    background-image: linear-gradient(to right,
+        #ff0000, #ff8000, #ffff00, #80ff00, #00ff00, #00ff80,
+        #00ffff, #0080ff, #0000ff, #8000ff, #ff00ff, #ff0080, #ff0000);
+    background-size: 200% auto;
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    animation: rgbFlow 4s linear infinite;
+}
+
+/* ============================================================
+   EFECTO 2 — Neon Pulse
+   ============================================================ */
+.text-effect-neon-pulse {
+    color: #fff;
+    -webkit-text-fill-color: #fff;
+    background: none;
+    animation: neonPulse 2s ease-in-out infinite;
+}
+
+/* ============================================================
+   EFECTO 3 — Plasma
+   ============================================================ */
+.text-effect-plasma {
+    background-image: linear-gradient(135deg,
+        #a855f7, #6366f1, #3b82f6, #06b6d4, #10b981, #6366f1, #a855f7);
+    background-size: 300% 300%;
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    animation: plasmaFlow 5s ease infinite;
+}
+
+/* ============================================================
+   EFECTO 4 — Glitch
+   ============================================================ */
+.text-effect-glitch {
+    color: #fff;
+    -webkit-text-fill-color: #fff;
+    background: none;
+    position: relative;
+    animation: glitchShift 6s steps(1) infinite;
+}
+.text-effect-glitch::before {
+    content: attr(data-text);
+    position: absolute;
+    left: 0; top: 0;
+    color: #ff4eb8;
+    -webkit-text-fill-color: #ff4eb8;
+    opacity: 0.8;
+    font-size: inherit;
+    font-weight: inherit;
+    letter-spacing: inherit;
+    line-height: inherit;
+    animation: glitchShift2 6s steps(1) infinite;
+}
+.text-effect-glitch::after {
+    content: attr(data-text);
+    position: absolute;
+    left: 0; top: 0;
+    color: #00e5ff;
+    -webkit-text-fill-color: #00e5ff;
+    opacity: 0.8;
+    font-size: inherit;
+    font-weight: inherit;
+    letter-spacing: inherit;
+    line-height: inherit;
+    animation: glitchShift 6s steps(1) infinite reverse;
+}
+
+/* ============================================================
+   EFECTO 5 — Fire
+   ============================================================ */
+.text-effect-fire {
+    background-image: linear-gradient(to top,
+        #ff0000, #ff4500, #ff8c00, #ffa500, #ffd700, #ffff00, #fff8dc);
+    background-size: 100% 300%;
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    animation: fireShimmer 2.5s linear infinite;
+}
+
+/* ============================================================
+   EFECTO 6 — Chrome
+   ============================================================ */
+.text-effect-chrome {
+    background-image: linear-gradient(90deg,
+        #999 0%,  #fff 15%, #aaa 30%,
+        #fff 45%, #bbb 60%, #fff 75%, #aaa 90%, #fff 100%);
+    background-size: 400% auto;
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    animation: chromeSheen 3s linear infinite;
+}
+
+/* ── Efecto 7: Electric (mejorado — shimmer suave sin parpadeo agresivo) ── */
+@keyframes electricShimmer {
+    0%   { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+@keyframes electricGlow {
+    0%, 100% {
+        filter: drop-shadow(0 0 4px rgba(255, 220, 0, 0.5))
+                drop-shadow(0 0 10px rgba(255, 180, 0, 0.3));
+    }
+    50% {
+        filter: drop-shadow(0 0 8px rgba(255, 230, 0, 0.7))
+                drop-shadow(0 0 20px rgba(255, 160, 0, 0.4));
+    }
+}
+
+/* ============================================================
+   EFECTO 7 — Electric
+   ============================================================ */
+.text-effect-electric {
+    background-image: linear-gradient(90deg,
+        #cc8800, #ffe600, #fff0a0, #ffe600,
+        #ffaa00, #ffe600, #cc8800);
+    background-size: 300% auto;
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    animation: electricShimmer 3s linear infinite, electricGlow 2s ease-in-out infinite;
+}
+
+/* ── Efecto 8: Cosmic ── */
+@keyframes cosmicDrift {
+    0%   { background-position: 0% 0%; }
+    25%  { background-position: 100% 50%; }
+    50%  { background-position: 50% 100%; }
+    75%  { background-position: 0% 50%; }
+    100% { background-position: 0% 0%; }
+}
+
+/* ============================================================
+   EFECTO 8 — Cosmic
+   ============================================================ */
+.text-effect-cosmic {
+    background-image: radial-gradient(ellipse at 0% 0%,
+        #e040fb, #7c4dff, #1a237e, #0d47a1, #00bcd4,
+        #7c4dff, #e040fb);
+    background-size: 300% 300%;
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    animation: cosmicDrift 8s ease infinite;
+    filter: drop-shadow(0 0 16px rgba(224, 64, 251, 0.6));
+}
+
+/* ── Efecto 9: Matrix (mejorado — verde oscuro suave, sin glow excesivo) ── */
+@keyframes matrixScroll {
+    0%   { background-position: 0 0; }
+    100% { background-position: 0 300%; }
+}
+@keyframes matrixBreath {
+    0%, 100% { opacity: 0.92; }
+    50%       { opacity: 0.75; }
+}
+
+/* ============================================================
+   EFECTO 9 — Matrix
+   ============================================================ */
+.text-effect-matrix {
+    background-image: linear-gradient(to bottom,
+        #007a1f, #00b330, #00e640, #009922,
+        #00cc33, #007a1f, #00e640);
+    background-size: 100% 400%;
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    animation: matrixScroll 4s linear infinite, matrixBreath 3s ease-in-out infinite;
+}
+
+/* ── Efecto 10: Wave ── */
+@keyframes waveFlow {
+    0%   { background-position: 0% 50%; }
+    50%  { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* ============================================================
+   EFECTO 10 — Wave
+   ============================================================ */
+.text-effect-wave {
+    background-image: linear-gradient(90deg,
+        #00e5ff, #00b0ff, #2979ff, #651fff, #d500f9,
+        #ff4081, #ff6d00, #00e5ff);
+    background-size: 300% auto;
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    animation: waveFlow 4s ease infinite;
+}
+
+/* ── Efecto 11: Pink Gamer ── */
+@keyframes pinkGamerFlow {
+    0%   { background-position: 0% 50%; }
+    50%  { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+@keyframes pinkGamerGlow {
+    0%, 100% { filter: drop-shadow(0 0 8px rgba(255, 20, 147, 0.55)) drop-shadow(0 0 20px rgba(255, 0, 180, 0.3)); }
+    50%       { filter: drop-shadow(0 0 14px rgba(255, 20, 147, 0.8)) drop-shadow(0 0 36px rgba(255, 0, 180, 0.45)); }
+}
+
+/* ============================================================
+   EFECTO 11 — Pink Gamer
+   ============================================================ */
+.text-effect-pink-gamer {
+    background-image: linear-gradient(90deg,
+        #ff0080, #ff1493, #ff69b4, #ff00aa,
+        #e91e8c, #ff1493, #ff0080);
+    background-size: 300% auto;
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    animation: pinkGamerFlow 4s ease infinite, pinkGamerGlow 2.5s ease-in-out infinite;
+}
+
+/* ── Efecto 12: Navidad ── */
+@keyframes navidadShimmer {
+    0%   { background-position: 0% 50%; }
+    50%  { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+@keyframes navidadSparkle {
+    0%, 100% { filter: drop-shadow(0 0 6px rgba(255, 215, 0, 0.5)); }
+    33%       { filter: drop-shadow(0 0 10px rgba(220, 30, 30, 0.6)); }
+    66%       { filter: drop-shadow(0 0 8px rgba(0, 160, 60, 0.5)); }
+}
+
+/* ============================================================
+   EFECTO 12 — Navidad
+   ============================================================ */
+.text-effect-navidad {
+    background-image: linear-gradient(90deg,
+        #cc0000, #ffd700, #006400, #ffd700,
+        #cc0000, #ff4444, #00aa00, #ffd700, #cc0000);
+    background-size: 400% auto;
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    animation: navidadShimmer 5s ease infinite, navidadSparkle 3s ease-in-out infinite;
+}
+
+/* ── Efecto 13: Año Nuevo ── */
+@keyframes anoNuevoSheen {
+    0%   { background-position: -300% 0; }
+    100% { background-position: 300% 0; }
+}
+@keyframes anoNuevoGlow {
+    0%, 100% {
+        filter: drop-shadow(0 0 6px rgba(255, 215, 0, 0.4))
+                drop-shadow(0 0 16px rgba(192, 192, 192, 0.3));
+    }
+    50% {
+        filter: drop-shadow(0 0 12px rgba(255, 215, 0, 0.7))
+                drop-shadow(0 0 30px rgba(192, 192, 192, 0.5));
+    }
+}
+
+/* ============================================================
+   EFECTO 13 — Año Nuevo
+   ============================================================ */
+.text-effect-ano-nuevo {
+    background-image: linear-gradient(90deg,
+        #b8860b, #ffd700, #fffacd, #ffd700,
+        #c0c0c0, #ffffff, #e8e8e8, #c0c0c0,
+        #ffd700, #fffacd, #ffd700, #b8860b);
+    background-size: 400% auto;
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    animation: anoNuevoSheen 4s linear infinite, anoNuevoGlow 2s ease-in-out infinite;
+}
+
+
+
+.glow-blur {
+    position: absolute;
+    filter: blur(24px);
+    /* blur-2xl approx */
+    opacity: 0.75;
+}
+
+.glow-front {
+    position: relative;
+    z-index: 11;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
+    /* drop-shadow-sm */
+}
+
+/* Logo Inferior Flotante Pequeño */
+.display-footer-logo {
+    position: absolute;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 20;
+    /* Ensures it's above the canvas */
+}
+
+.display-footer-logo img {
+    height: 40px;
+    /* Tamaño pequeño */
+    width: auto;
+    opacity: 0.8;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    /* Efecto rebote suave */
+    cursor: pointer;
+}
+
+.display-footer-logo img:hover {
+    transform: scale(1.5);
+    /* Crece al pasar el mouse */
+    opacity: 1;
+    filter: drop-shadow(0 0 15px rgba(255, 255, 255, 0.5));
+    /* Brillo extra al hacer hover */
+}
+
+/* RELOJ Y FECHA ESQUINAS SUPERIORES */
+.display-top-left-date,
+.display-top-right-time {
+    position: absolute;
+    top: 30px;
+    z-index: 20;
+    /* Above canvas */
+    color: #ffffff;
+    font-family: 'Inter', sans-serif;
+    font-size: 1.25rem;
+    /* Tamaño mediano */
+    font-weight: 700;
+    letter-spacing: 2px;
+    background: rgba(0, 0, 0, 0.5);
+    /* Fondo oscuro semitransparente para mejor lectura */
+    backdrop-filter: blur(10px);
+    padding: 10px 20px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+    user-select: none;
+}
+
+.display-top-left-date {
+    left: 40px;
+}
+
+.display-top-right-time {
+    right: 40px;
+}
+
+/* ============================
+   TIENDA BUTTON — bottom-left
+   ============================ */
+.tienda-btn {
+    position: fixed;
+    bottom: 36px;
+    left: 36px;
+    z-index: 50;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    user-select: none;
+    transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.tienda-btn:hover {
+    transform: translateY(-6px);
+}
+
+.tienda-icon-wrap {
+    position: relative;
+    width: 80px;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Pulsing neon ring behind the icon */
+.tienda-glow-ring {
+    position: absolute;
+    inset: -4px;
+    border-radius: 50%;
+    background: conic-gradient(#ff4eb8, #00e5ff, #ffd600, #00e676, #ff4eb8);
+    filter: blur(8px);
+    opacity: 0.65;
+    animation: tienda-ring-spin 4s linear infinite;
+    z-index: 0;
+}
+
+@keyframes tienda-ring-spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Dark circle on top to give the "framed" look */
+.tienda-icon-wrap::before {
+    content: '';
+    position: absolute;
+    inset: 2px;
+    border-radius: 50%;
+    background: #070b1a;
+    z-index: 1;
+}
+
+.tienda-svg {
+    width: 48px;
+    height: 48px;
+    position: relative;
+    z-index: 2;
+    filter: drop-shadow(0 0 6px rgba(0, 229, 255, 0.5)) drop-shadow(0 0 12px rgba(255, 78, 184, 0.3));
+    animation: tienda-float 3s ease-in-out infinite;
+}
+
+@keyframes tienda-float {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-4px);
+    }
+}
+
+.tienda-label {
+    font-family: 'Orbitron', 'Inter', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #ffffff;
+    text-shadow:
+        0 0 8px rgba(0, 229, 255, 0.8),
+        0 0 20px rgba(0, 229, 255, 0.4);
+    background: linear-gradient(135deg, #00e5ff, #ff4eb8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}

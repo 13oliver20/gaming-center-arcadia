@@ -1,0 +1,203 @@
+/* ============================================================
+   SupabaseStatus — badge de estado de conexión en tiempo real
+   ============================================================ */
+
+.sbs-wrapper {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 11px 5px 8px;
+    border-radius: 20px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.25s ease;
+    white-space: nowrap;
+    font-family: 'Inter', 'Roboto', system-ui, sans-serif;
+}
+
+/* ── Variantes de badge ── */
+.badge-connected {
+    background: rgba(0, 255, 136, 0.08);
+    border-color: rgba(0, 255, 136, 0.25);
+}
+.badge-connected:hover {
+    background: rgba(0, 255, 136, 0.14);
+    border-color: rgba(0, 255, 136, 0.45);
+    box-shadow: 0 0 12px rgba(0, 255, 136, 0.18);
+}
+
+.badge-error {
+    background: rgba(255, 70, 70, 0.08);
+    border-color: rgba(255, 70, 70, 0.3);
+}
+.badge-error:hover {
+    background: rgba(255, 70, 70, 0.14);
+    border-color: rgba(255, 70, 70, 0.5);
+    box-shadow: 0 0 12px rgba(255, 70, 70, 0.2);
+}
+
+.badge-checking {
+    background: rgba(255, 200, 0, 0.07);
+    border-color: rgba(255, 200, 0, 0.25);
+}
+.badge-checking:hover {
+    background: rgba(255, 200, 0, 0.12);
+}
+
+/* ── Punto pulsante ── */
+.sbs-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.dot-connected {
+    background: #00ff88;
+    box-shadow: 0 0 6px #00ff88;
+    animation: pulse-green 2s ease-in-out infinite;
+}
+
+.dot-error {
+    background: #ff4646;
+    box-shadow: 0 0 6px #ff4646;
+    animation: pulse-red 1.5s ease-in-out infinite;
+}
+
+.dot-checking {
+    background: #ffc800;
+    box-shadow: 0 0 6px #ffc800;
+    animation: pulse-yellow 1s ease-in-out infinite;
+}
+
+@keyframes pulse-green {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%       { opacity: 0.55; transform: scale(1.35); }
+}
+
+@keyframes pulse-red {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%       { opacity: 0.5; transform: scale(1.4); }
+}
+
+@keyframes pulse-yellow {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.4; }
+}
+
+/* ── Icono giratorio cuando verifica ── */
+.sbs-icon {
+    font-size: 0.7rem;
+    line-height: 1;
+    display: none; /* hidden by default; shown in checking state */
+}
+
+.badge-checking .sbs-dot { display: none; }
+.badge-checking .sbs-icon {
+    display: inline-block;
+    color: #ffc800;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+}
+
+/* ── Texto ── */
+.sbs-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+}
+
+.badge-connected .sbs-label { color: #00ff88; }
+.badge-error .sbs-label     { color: #ff7070; }
+.badge-checking .sbs-label  { color: #ffc800; }
+
+/* ── Latencia ── */
+.sbs-latency {
+    font-size: 0.65rem;
+    font-weight: 500;
+    color: rgba(0, 255, 136, 0.65);
+    background: rgba(0, 255, 136, 0.1);
+    padding: 1px 5px;
+    border-radius: 8px;
+    font-variant-numeric: tabular-nums;
+}
+
+/* ── Tooltip ── */
+.sbs-tooltip {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    z-index: 9999;
+    min-width: 210px;
+    background: rgba(10, 10, 28, 0.97);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 12px 14px;
+    backdrop-filter: blur(20px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(0, 200, 255, 0.08);
+    animation: fadeIn 0.15s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.sbs-tooltip::before {
+    content: '';
+    position: absolute;
+    top: -6px;
+    right: 16px;
+    width: 10px;
+    height: 10px;
+    background: rgba(10, 10, 28, 0.97);
+    border-left: 1px solid rgba(255, 255, 255, 0.1);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    transform: rotate(45deg);
+}
+
+.sbs-tooltip-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 3px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.sbs-tooltip-row:last-of-type {
+    border-bottom: none;
+}
+
+.sbs-tooltip-key {
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.45);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.sbs-tooltip-val {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.85);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+.val-ok  { color: #00ff88; }
+.val-err { color: #ff7070; }
+
+.sbs-tooltip-hint {
+    margin-top: 8px;
+    font-size: 0.65rem;
+    color: rgba(255, 255, 255, 0.3);
+    text-align: center;
+    font-style: italic;
+}

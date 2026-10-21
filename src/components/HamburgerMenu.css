@@ -1,0 +1,134 @@
+/* ===== HAMBURGER BUTTON ===== */
+.hamburger-wrapper {
+  position: relative;
+  z-index: 1000;
+}
+
+.hamburger-btn {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 34px;
+  height: 24px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  gap: 5px;
+}
+
+.bar {
+  display: block;
+  width: 100%;
+  height: 3px;
+  background: #00c8ff;
+  border-radius: 3px;
+  transition: all 0.32s cubic-bezier(0.645, 0.045, 0.355, 1);
+  transform-origin: center;
+}
+
+/* X state */
+.hamburger-btn.open .bar1 {
+  transform: translateY(10px) rotate(45deg);
+}
+
+.hamburger-btn.open .bar2 {
+  opacity: 0;
+  transform: scaleX(0);
+}
+
+.hamburger-btn.open .bar3 {
+  transform: translateY(-10px) rotate(-45deg);
+}
+
+/* ===== DROPDOWN PANEL ===== */
+.dropdown-menu {
+  position: absolute;
+  top: calc(100% + 16px);
+  left: 0;
+  min-width: 270px;
+  background: linear-gradient(160deg, #0f0f24, #0a0a1e);
+  border: 1px solid rgba(0, 200, 255, 0.2);
+  border-radius: 12px;
+  padding: 0 0 8px 0;
+  opacity: 0;
+  transform: translateY(-10px) scale(0.97);
+  pointer-events: none;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  box-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.6),
+    0 0 0 1px rgba(0, 200, 255, 0.06) inset;
+}
+
+.dropdown-menu.visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: all;
+}
+
+/* Section title */
+.dropdown-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px 10px;
+  border-bottom: 1px solid rgba(0, 200, 255, 0.12);
+  margin-bottom: 6px;
+}
+
+.dropdown-header-icon {
+  font-size: 1.1rem;
+}
+
+.dropdown-header-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #00c8ff;
+}
+
+/* List items */
+.dropdown-menu ul {
+  list-style: none;
+  margin: 0;
+  padding: 0 8px;
+}
+
+.dropdown-menu li {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.dropdown-menu a {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 14px;
+  color: rgba(255, 255, 255, 0.75);
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+  border-radius: 8px;
+  transition: background 0.18s ease, color 0.18s ease, transform 0.18s ease;
+}
+
+.dropdown-menu a:hover {
+  background: rgba(0, 200, 255, 0.1);
+  color: #00c8ff;
+  transform: translateX(5px);
+}
+
+.menu-icon {
+  font-size: 1rem;
+  min-width: 20px;
+  text-align: center;
+}
+
+/* ===== OVERLAY ===== */
+.menu-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  background: transparent;
+}
