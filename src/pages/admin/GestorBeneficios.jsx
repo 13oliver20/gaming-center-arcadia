@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { supabase } from '../../supabaseClient'
 import './GestorBeneficios.css'
 
@@ -17,10 +17,31 @@ const GestorBeneficios = () => {
     const [deleteModal, setDeleteModal] = useState(null) // null or { id }
     const [confirmAddModal, setConfirmAddModal] = useState(false)
 
+    const channelRef = useRef(null)
+
     const showToast = (msg, type = 'success') => {
         setToast({ msg, type })
         setTimeout(() => setToast(null), 3500)
     }
+
+    const broadcastBeneficios = (texto) => {
+        if (channelRef.current) {
+            channelRef.current.send({
+                type: 'broadcast',
+                event: 'update_beneficios',
+                payload: { texto, timestamp: Date.now() }
+            }).catch(err => console.error("Broadcast error:", err))
+        }
+    }
+
+    useEffect(() => {
+        const channel = supabase.channel('public:sorteos_all', {
+            config: { broadcast: { ack: true } }
+        })
+        channel.subscribe()
+        channelRef.current = channel
+        return () => supabase.removeChannel(channel)
+    }, [])
 
     const fetchBeneficios = async () => {
         setLoading(true)
@@ -78,6 +99,7 @@ const GestorBeneficios = () => {
                 if (error) throw error
                 setBeneficios(data)
             }
+            broadcastBeneficios(payload.texto)
             showToast('✅ Beneficio guardado exitosamente.')
         } catch (e) {
             showToast('❌ Error al guardar: ' + e.message, 'error')

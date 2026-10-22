@@ -572,6 +572,160 @@ input:checked+.hs-slider:before {
     transform: scale(1.15);
 }
 
+/* ===== DIALOGS ===== */
+.gu-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(8px);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: gu-fade-in 0.18s ease;
+}
+
+@keyframes gu-fade-in {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.gu-dialog {
+    background: linear-gradient(160deg, #0f0f24, #0a0a1e);
+    border: 1px solid rgba(0, 200, 255, 0.25);
+    border-radius: 16px;
+    padding: 30px 34px;
+    min-width: 340px;
+    max-width: 440px;
+    width: 90%;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.85);
+    animation: gu-slide-up 0.22s ease;
+    box-sizing: border-box;
+    position: relative;
+    z-index: 10000;
+}
+
+@keyframes gu-slide-up {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.gu-dialog-icon {
+    font-size: 2.2rem;
+    text-align: center;
+}
+
+.gu-dialog-title {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #fff;
+    text-align: center;
+}
+
+.gu-dialog-body {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.gu-dialog-body p {
+    margin: 0 0 10px;
+    color: rgba(255, 255, 255, 0.65);
+    font-size: 0.95rem;
+    text-align: center;
+}
+
+.gu-dialog-preview {
+    background: rgba(0, 200, 255, 0.07);
+    border: 1px solid rgba(0, 200, 255, 0.18);
+    border-radius: 10px;
+    padding: 14px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.gu-dialog-preview strong {
+    color: rgba(255, 255, 255, 0.5);
+    font-weight: 500;
+    margin-right: 6px;
+}
+
+.gu-dialog-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    margin-top: 6px;
+}
+
+.gu-btn-cancel {
+    padding: 10px 22px;
+    background: rgba(255, 255, 255, 0.07);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.9rem;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.18s, color 0.18s;
+}
+
+.gu-btn-cancel:hover {
+    background: rgba(255, 255, 255, 0.14);
+    color: #fff;
+}
+
+.gu-btn-confirm {
+    padding: 10px 24px;
+    background: #00c8ff;
+    border: none;
+    border-radius: 8px;
+    color: #05050f;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.18s, transform 0.15s;
+}
+
+.gu-btn-confirm:hover {
+    background: #33d4ff;
+    transform: scale(1.02);
+}
+
+.gu-btn-danger {
+    padding: 10px 24px;
+    background: #dc2626;
+    border: none;
+    border-radius: 8px;
+    color: #fff;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.18s;
+}
+
+.gu-btn-danger:hover {
+    background: #ef4444;
+}
+
 /* Wider dialog for edit form */
 .gu-dialog-wide {
     max-width: 480px;

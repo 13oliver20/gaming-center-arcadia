@@ -77,9 +77,10 @@ const GestorQRsDisplay = ({ onLoaded }) => {
             })
             .subscribe()
 
-        // Polling de respaldo cada 2s (por si replication no está habilitada en la tabla)
+        // Polling de respaldo cada 3s para configuración y layout de QRs
         const layoutInterval = setInterval(async () => {
             try {
+                fetchAll()
                 const { data, error } = await supabase
                     .from('display_qr_layout')
                     .select('*')
@@ -90,7 +91,7 @@ const GestorQRsDisplay = ({ onLoaded }) => {
                     setLayout({ pos_x: data.pos_x, pos_y: safeY, scale: data.scale })
                 }
             } catch (_) {}
-        }, 2000)
+        }, 3000)
 
         return () => {
             supabase.removeChannel(channel)

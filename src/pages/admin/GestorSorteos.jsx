@@ -52,6 +52,16 @@ const GestorSorteos = () => {
 
     const channelRef = useRef(null)
 
+    const broadcastSorteosChange = () => {
+        if (channelRef.current) {
+            channelRef.current.send({
+                type: 'broadcast',
+                event: 'update_sorteos',
+                payload: { timestamp: Date.now() }
+            }).catch(err => console.error("Broadcast error:", err))
+        }
+    }
+
     useEffect(() => {
         const channel = supabase.channel('public:sorteos_all', {
             config: {
@@ -213,6 +223,7 @@ const GestorSorteos = () => {
                 payload: newConfigState
             }).catch(err => console.error("Broadcast error:", err))
         }
+        broadcastSorteosChange()
 
         await supabase.from('sorteos_configuracion').update({ dias_activos: newDias }).eq('id', '00000000-0000-0000-0000-000000000001')
     }
@@ -230,12 +241,14 @@ const GestorSorteos = () => {
             showToast('Error al agregar.', 'error')
         } else if (data) {
             setHorarios([...horarios, data[0]])
+            broadcastSorteosChange()
         }
     }
 
     const updateHora = async (id, nuevaHora) => {
         setHorarios(horarios.map(h => h.id === id ? { ...h, hora: nuevaHora } : h))
         await supabase.from('sorteos_horarios').update({ hora: nuevaHora }).eq('id', id)
+        broadcastSorteosChange()
     }
 
     // Helper: Ajustar hora en incrementos/decrementos de 30 mins
@@ -279,33 +292,47 @@ const GestorSorteos = () => {
 
             setHorarios(prev => prev.filter(h => h.id !== id))
             showToast('🗑️ Sorteo eliminado.', 'success')
+            broadcastSorteosChange()
         } catch (e) {
             console.error('Error al eliminar:', e)
             showToast('❌ Error al eliminar: ' + e.message, 'error')
         }
     }
 
-    // --- Search Users ---
-    const handleSearchChange = (sorteoId, text) => {
-        setSearchTerms(prev => ({ ...prev, [sorteoId]: text }))
+    // --- Search Users & Outside Click ---
+    const searchTimers = useRef({})
+    const searchWrapRefs = useRef({})
 
-        // Quick debounce
-        setTimeout(async () => {
-            if (!text.trim()) {
-                setSearchResults(prev => ({ ...prev, [sorteoId]: [] }))
-                return
+    const searchUsers = async (sorteoId, text) => {
+        const q = (text || '').trim()
+        try {
+            let query = supabase.from('usuarios').select('id, nombre_real, nickname')
+            if (q) {
+                query = query.or(`nombre_real.ilike.%${q}%,nickname.ilike.%${q}%`)
+            } else {
+                query = query.order('nombre_real', { ascending: true })
             }
-
-            const { data, error } = await supabase
-                .from('usuarios')
-                .select('id, nombre_real, nickname')
-                .or(`nombre_real.ilike.%${text}%,nickname.ilike.%${text}%`)
-                .limit(5)
-
+            const { data, error } = await query.limit(6)
             if (!error && data) {
                 setSearchResults(prev => ({ ...prev, [sorteoId]: data }))
             }
-        }, 300)
+        } catch (err) {
+            console.error('Error searching users:', err)
+        }
+    }
+
+    const handleSearchChange = (sorteoId, text) => {
+        setSearchTerms(prev => ({ ...prev, [sorteoId]: text }))
+        if (searchTimers.current[sorteoId]) {
+            clearTimeout(searchTimers.current[sorteoId])
+        }
+        searchTimers.current[sorteoId] = setTimeout(() => {
+            searchUsers(sorteoId, text)
+        }, 200)
+    }
+
+    const handleSearchFocus = (sorteoId) => {
+        searchUsers(sorteoId, searchTerms[sorteoId] || '')
     }
 
     const clearSearch = (sorteoId) => {
@@ -313,8 +340,21 @@ const GestorSorteos = () => {
         setSearchResults(prev => ({ ...prev, [sorteoId]: [] }))
     }
 
+    useEffect(() => {
+        const handleOutsideClick = (e) => {
+            const wraps = Object.values(searchWrapRefs.current).filter(Boolean)
+            if (wraps.length > 0 && wraps.every(el => !el.contains(e.target))) {
+                setSearchResults({})
+            }
+        }
+        document.addEventListener('mousedown', handleOutsideClick)
+        return () => document.removeEventListener('mousedown', handleOutsideClick)
+    }, [])
+
     // --- Pick Winner ---
     const promptWinner = (sorteoId, usuario) => {
+        setSearchResults(prev => ({ ...prev, [sorteoId]: [] }))
+        setSearchTerms(prev => ({ ...prev, [sorteoId]: '' }))
         setConfirmDialog({ sorteoId, usuario })
     }
 
@@ -322,10 +362,15 @@ const GestorSorteos = () => {
         if (!confirmDialog) return
         const { sorteoId, usuario } = confirmDialog
         try {
+            const today = getPeruDateStr()
+
+            // Eliminar registros previos de este sorteo hoy para evitar duplicados
+            await supabase.from('sorteos_historial').delete().eq('sorteo_id', sorteoId).eq('fecha', today)
+
             const payload = {
                 sorteo_id: sorteoId,
                 usuario_id: usuario.id,
-                fecha: getPeruDateStr(), // yyyy-mm-dd
+                fecha: today,
                 premio: 'Sin Asignar'
             }
 
@@ -338,7 +383,8 @@ const GestorSorteos = () => {
             setSelectedWinners(prev => ({ ...prev, [sorteoId]: usuario }))
 
             clearSearch(sorteoId)
-            fetchData() // Refresh history
+            await fetchData() // Refresh history
+            broadcastSorteosChange() // Actualización en tiempo real para /display
 
         } catch (e) {
             showToast('❌ Error al guardar ganador: ' + e.message, 'error')
@@ -353,17 +399,15 @@ const GestorSorteos = () => {
         try {
             const today = getPeruDateStr()
 
-            // Find and delete the record
-            const target = historial.find(h => h.sorteo_id === sorteoId && h.fecha === today)
-            if (target) {
-                await supabase.from('sorteos_historial').delete().eq('id', target.id)
-            }
+            // Eliminar registro de la base de datos
+            await supabase.from('sorteos_historial').delete().eq('sorteo_id', sorteoId).eq('fecha', today)
 
             const newWinners = { ...selectedWinners }
             delete newWinners[sorteoId]
             setSelectedWinners(newWinners)
 
-            setHistorial(historial.filter(h => h.id !== target?.id))
+            await fetchData()
+            broadcastSorteosChange()
             showToast('🔄 Listo para elegir otro ganador.', 'success')
 
         } catch (e) {
@@ -392,6 +436,7 @@ const GestorSorteos = () => {
                 delete newWinners[confirmDeleteDialog.sorteo_id]
                 setSelectedWinners(newWinners)
             }
+            broadcastSorteosChange()
         } catch (e) {
             showToast('❌ Error al borrar el registro', 'error')
         } finally {
@@ -461,6 +506,7 @@ const GestorSorteos = () => {
             setEditDialog(null)
             setConfirmSaveEditDialog(false)
             fetchData()
+            broadcastSorteosChange()
         } catch (e) {
             showToast('❌ Error al actualizar: ' + e.message, 'error')
             setConfirmSaveEditDialog(false)
@@ -693,6 +739,7 @@ const GestorSorteos = () => {
                 showToast(`❌ No se importó nada. ${detail.join(' | ')}. Mira F12.`, 'error')
             }
             fetchData()
+            broadcastSorteosChange()
         } catch (err) {
             showToast('❌ Error al importar: ' + err.message, 'error')
         }
@@ -709,6 +756,7 @@ const GestorSorteos = () => {
             setHistorial([])
             setSelectedWinners({})
             showToast('🗑️ Historial eliminado completamente.', 'success')
+            broadcastSorteosChange()
         } catch (e) {
             showToast('❌ Error al eliminar historial: ' + e.message, 'error')
         } finally {
@@ -792,7 +840,7 @@ const GestorSorteos = () => {
                                 </div>
                             </div>
 
-                            <div className="hs-winner-search-wrap">
+                            <div className="hs-winner-search-wrap" ref={el => searchWrapRefs.current[h.id] = el}>
                                 {selectedWinners[h.id] ? (
                                     <div className="hs-winner-locked" style={{
                                         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -818,6 +866,7 @@ const GestorSorteos = () => {
                                             placeholder={`Seleccionar Ganador Sorteo #${i + 1}...`}
                                             value={searchTerms[h.id] || ''}
                                             onChange={(e) => handleSearchChange(h.id, e.target.value)}
+                                            onFocus={() => handleSearchFocus(h.id)}
                                         />
 
                                         {/* Search Dropdown */}
@@ -827,6 +876,7 @@ const GestorSorteos = () => {
                                                     <div
                                                         key={user.id}
                                                         className="hs-dropdown-item"
+                                                        onMouseDown={(e) => e.preventDefault()}
                                                         onClick={() => promptWinner(h.id, user)}
                                                     >
                                                         <span className="hs-dropdown-name">{user.nombre_real}</span>

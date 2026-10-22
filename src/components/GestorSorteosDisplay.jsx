@@ -63,16 +63,17 @@ const GestorSorteosDisplay = ({ onLoaded }) => {
                 .from('sorteos_historial')
                 .select('*')
                 .eq('fecha', currentTodayStr)
+                .order('created_at', { ascending: true })
 
             if (histData && histData.length > 0) {
                 const userIds = [...new Set(histData.map(h => h.usuario_id))]
                 const { data: uData } = await supabase
                     .from('usuarios')
-                    .select('id, nickname')
+                    .select('id, nickname, nombre_real')
                     .in('id', userIds)
                 const userMap = {}
                 if (uData) {
-                    uData.forEach(u => { userMap[u.id] = u.nickname })
+                    uData.forEach(u => { userMap[u.id] = u.nickname || u.nombre_real || 'Ganador' })
                 }
                 const map = {}
                 histData.forEach(row => {
@@ -86,7 +87,7 @@ const GestorSorteosDisplay = ({ onLoaded }) => {
             // 4. Ganadores Mensuales dentro del mes actual en Perú (desde 00:00 del día 1 hasta 23:59:59 del último día del mes)
             const { data: mData } = await supabase
                 .from('ganadores_mensuales')
-                .select('posicion, puntos, usuario_id, usuarios ( id, nickname )')
+                .select('posicion, puntos, usuario_id, usuarios ( id, nickname, nombre_real )')
                 .gte('created_at', startIso)
                 .lte('created_at', endIso)
                 .order('posicion', { ascending: true })
@@ -159,25 +160,28 @@ const GestorSorteosDisplay = ({ onLoaded }) => {
                     setLayout({ pos_x: payload.new.pos_x, pos_y: safeY, scale: payload.new.scale })
                 }
             })
+            .on('broadcast', { event: 'update_sorteos' }, () => {
+                fetchData()
+            })
             .on('broadcast', { event: 'update_mensuales' }, () => {
+                fetchData()
+            })
+            .on('broadcast', { event: 'update_beneficios' }, (payload) => {
+                if (payload.payload?.texto !== undefined) {
+                    setBeneficioTexto(payload.payload.texto)
+                }
                 fetchData()
             })
             .on('broadcast', { event: 'update_config' }, (payload) => {
                 if (payload.payload) setConfig(payload.payload)
+                fetchData()
             })
             .subscribe()
 
-        // Polling de respaldo para beneficios (por si replication no está habilitada)
-        const beneficiosInterval = setInterval(async () => {
-            try {
-                const { data, error } = await supabase
-                    .from('beneficios_cliente')
-                    .select('texto')
-                    .limit(1)
-                    .single()
-                if (!error && data) setBeneficioTexto(data.texto || '')
-            } catch (_) {}
-        }, 4000)
+        // Polling constante cada 3s para sincronización garantizada de sorteos, ganadores y beneficios en tiempo real
+        const syncInterval = setInterval(() => {
+            fetchData()
+        }, 3000)
 
         // Polling de respaldo para layout de sorteos
         const layoutInterval = setInterval(async () => {
@@ -213,7 +217,7 @@ const GestorSorteosDisplay = ({ onLoaded }) => {
 
         return () => {
             supabase.removeChannel(channel)
-            clearInterval(beneficiosInterval)
+            clearInterval(syncInterval)
             clearInterval(layoutInterval)
             clearInterval(dateCheckInterval)
         }
