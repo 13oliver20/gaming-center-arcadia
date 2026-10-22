@@ -6,6 +6,7 @@ import {
     getPeruMonthRange,
     getPeruMonthName
 } from '../../utils/peruTime'
+import { searchUsersList, highlightMatch } from '../../utils/userSearch'
 
 const GestorGanadoresMensuales = () => {
     // State for History
@@ -28,6 +29,9 @@ const GestorGanadoresMensuales = () => {
         { pos: 4, usuario: null, puntos: '' },
         { pos: 5, usuario: null, puntos: '' },
     ])
+
+    // Cached users for instant master search
+    const allUsersRef = useRef([])
 
     // Autocomplete states per position
     const [searchTerms, setSearchTerms] = useState({ 1: '', 2: '', 3: '', 4: '', 5: '' })
@@ -164,19 +168,27 @@ const GestorGanadoresMensuales = () => {
                 } else {
                     console.error('Error fetching ganadores:', error)
                 }
-                return
+            } else {
+                // Mapear exactamente las 5 posiciones (si no hay datos o es nuevo mes, quedan limpias esperando nuevos ganadores)
+                const updatedGanadores = [1, 2, 3, 4, 5].map(pos => {
+                    const found = (data || []).find(r => r.posicion === pos)
+                    return {
+                        pos,
+                        usuario: found?.usuarios || null,
+                        puntos: found?.puntos != null ? found.puntos : ''
+                    }
+                })
+                setGanadores(updatedGanadores)
             }
 
-            // Mapear exactamente las 5 posiciones (si no hay datos o es nuevo mes, quedan limpias esperando nuevos ganadores)
-            const updatedGanadores = [1, 2, 3, 4, 5].map(pos => {
-                const found = (data || []).find(r => r.posicion === pos)
-                return {
-                    pos,
-                    usuario: found?.usuarios || null,
-                    puntos: found?.puntos != null ? found.puntos : ''
-                }
-            })
-            setGanadores(updatedGanadores)
+            // Cargar usuarios en caché para el Buscador Maestro instantáneo
+            const { data: allUsers } = await supabase
+                .from('usuarios')
+                .select('id, nickname, nombre_real')
+                .order('nickname', { ascending: true })
+            if (allUsers) {
+                allUsersRef.current = allUsers
+            }
 
         } catch (e) {
             console.error(e)
@@ -190,52 +202,35 @@ const GestorGanadoresMensuales = () => {
         setTimeout(() => setToast(null), 3500)
     }
 
-    // Debounced search for autocomplete con prioridad en nombre de usuario (@nickname)
-    useEffect(() => {
-        if (activeSearch === null) return
-
-        const rawTerm = searchTerms[activeSearch] || ''
-        const cleanTerm = rawTerm.trim().replace(/^@/, '')
-
-        const timer = setTimeout(async () => {
-            try {
-                let query = supabase.from('usuarios').select('id, nickname, nombre_real')
-                if (cleanTerm) {
-                    query = query.or(`nickname.ilike.%${cleanTerm}%,nombre_real.ilike.%${cleanTerm}%`)
-                } else {
-                    query = query.order('nickname', { ascending: true })
-                }
-                const { data, error } = await query.limit(8)
-                if (error) throw error
-
-                let results = data || []
-                if (cleanTerm) {
-                    const lq = cleanTerm.toLowerCase()
-                    results.sort((a, b) => {
-                        const aNick = (a.nickname || '').toLowerCase()
-                        const bNick = (b.nickname || '').toLowerCase()
-                        const aStarts = aNick.startsWith(lq)
-                        const bStarts = bNick.startsWith(lq)
-                        if (aStarts && !bStarts) return -1
-                        if (!aStarts && bStarts) return 1
-                        const aIncludes = aNick.includes(lq)
-                        const bIncludes = bNick.includes(lq)
-                        if (aIncludes && !bIncludes) return -1
-                        if (!aIncludes && bIncludes) return 1
-                        return aNick.localeCompare(bNick)
-                    })
-                }
-                setSearchResults(prev => ({ ...prev, [activeSearch]: results }))
-            } catch (err) {
-                console.error(err)
-            }
-        }, 200)
-
-        return () => clearTimeout(timer)
-    }, [searchTerms, activeSearch])
+    // Buscador Maestro: Búsqueda 0ms con algoritmo de relevancia profesional
+    const searchUsers = (pos, text) => {
+        const users = allUsersRef.current
+        if (users && users.length > 0) {
+            const results = searchUsersList(users, text, 10)
+            setSearchResults(prev => ({ ...prev, [pos]: results }))
+        } else {
+            supabase
+                .from('usuarios')
+                .select('id, nickname, nombre_real')
+                .order('nickname', { ascending: true })
+                .then(({ data }) => {
+                    if (data) {
+                        allUsersRef.current = data
+                        const results = searchUsersList(data, text, 10)
+                        setSearchResults(prev => ({ ...prev, [pos]: results }))
+                    }
+                })
+        }
+    }
 
     const handleSearchChange = (pos, val) => {
         setSearchTerms(prev => ({ ...prev, [pos]: val }))
+        searchUsers(pos, val)
+    }
+
+    const handleSearchFocus = (pos) => {
+        setActiveSearch(pos)
+        searchUsers(pos, searchTerms[pos] || '')
     }
 
     const selectUser = (pos, user) => {
@@ -394,30 +389,39 @@ const GestorGanadoresMensuales = () => {
                                 <div className="ggm-search-wrapper">
                                     <input
                                         className="ggm-search-input"
-                                        placeholder="Buscar por @usuario (o nombre)..."
+                                        placeholder="Buscar @usuario o nombre..."
                                         value={searchTerms[pos]}
                                         onChange={(e) => handleSearchChange(pos, e.target.value)}
-                                        onFocus={() => isEditing[pos] && setActiveSearch(pos)}
+                                        onFocus={() => isEditing[pos] && handleSearchFocus(pos)}
                                         disabled={!isEditing[pos]}
                                     />
-                                    {activeSearch === pos && searchResults[pos]?.length > 0 && (
+                                    {activeSearch === pos && (
                                         <div className="ggm-autocomplete-dropdown">
-                                            {searchResults[pos].map(u => (
-                                                <div
-                                                    key={u.id}
-                                                    className="ggm-autocomplete-item"
-                                                    onMouseDown={(e) => e.preventDefault()}
-                                                    onClick={() => selectUser(pos, u)}
-                                                >
-                                                    <span className="ggm-auto-nick">@{u.nickname}</span>
-                                                    <span className="ggm-auto-name">{u.nombre_real}</span>
+                                            <div className="ggm-dropdown-header">
+                                                <span className="ggm-col-user">👤 USUARIO</span>
+                                                <span className="ggm-col-name">📋 NOMBRE REAL</span>
+                                            </div>
+                                            {searchResults[pos]?.length > 0 ? (
+                                                searchResults[pos].map(u => (
+                                                    <div
+                                                        key={u.id}
+                                                        className="ggm-autocomplete-item"
+                                                        onMouseDown={(e) => e.preventDefault()}
+                                                        onClick={() => selectUser(pos, u)}
+                                                    >
+                                                        <span className="ggm-col-user">
+                                                            <span className="ggm-auto-nick">@{highlightMatch(u.nickname, searchTerms[pos])}</span>
+                                                        </span>
+                                                        <span className="ggm-col-name">
+                                                            <span className="ggm-auto-name">{highlightMatch(u.nombre_real, searchTerms[pos])}</span>
+                                                        </span>
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <div style={{ padding: '16px 14px', color: 'rgba(255, 255, 255, 0.45)', fontSize: '0.85rem', textAlign: 'center' }}>
+                                                    No se encontraron usuarios coincidentes
                                                 </div>
-                                            ))}
-                                        </div>
-                                    )}
-                                    {activeSearch === pos && searchTerms[pos] && searchResults[pos]?.length === 0 && (
-                                        <div className="ggm-autocomplete-dropdown" style={{ padding: '10px 12px', color: '#8c96a3', fontSize: '0.85rem' }}>
-                                            No se encontraron usuarios
+                                            )}
                                         </div>
                                     )}
                                 </div>

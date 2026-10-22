@@ -157,23 +157,56 @@
     position: absolute;
     top: calc(100% + 4px);
     left: 0;
-    right: 0;
-    background: #252834;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 6px;
-    max-height: 200px;
+    width: 320px;
+    max-width: 90vw;
+    background: #0d1322;
+    border: 1px solid rgba(0, 229, 255, 0.45);
+    border-radius: 8px;
+    max-height: 280px;
     overflow-y: auto;
-    z-index: 100;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+    z-index: 500;
+    box-shadow: 0 16px 45px rgba(0, 0, 0, 0.75), 0 0 20px rgba(0, 229, 255, 0.15);
+}
+
+.ggm-card.pos-4 .ggm-autocomplete-dropdown,
+.ggm-card.pos-5 .ggm-autocomplete-dropdown {
+    left: auto;
+    right: 0;
+}
+
+.ggm-dropdown-header {
+    display: grid;
+    grid-template-columns: 140px 1fr;
+    padding: 9px 14px;
+    background: rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid rgba(0, 229, 255, 0.25);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    user-select: none;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    backdrop-filter: blur(10px);
+}
+
+.ggm-dropdown-header .ggm-col-user {
+    color: #00e5ff;
+}
+
+.ggm-dropdown-header .ggm-col-name {
+    color: rgba(255, 255, 255, 0.5);
 }
 
 .ggm-autocomplete-item {
-    padding: 10px 12px;
+    display: grid;
+    grid-template-columns: 140px 1fr;
+    padding: 10px 14px;
     cursor: pointer;
+    align-items: center;
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
+    transition: background 0.18s ease;
 }
 
 .ggm-autocomplete-item:last-child {
@@ -181,18 +214,45 @@
 }
 
 .ggm-autocomplete-item:hover {
-    background: #2f3442;
+    background: rgba(0, 229, 255, 0.12);
+}
+
+.ggm-col-user {
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding-right: 10px;
+}
+
+.ggm-col-name {
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .ggm-auto-nick {
-    font-weight: 600;
-    color: #00c8ff;
-    font-size: 0.9rem;
+    font-weight: 700;
+    color: #00e5ff;
+    font-size: 0.92rem;
 }
 
 .ggm-auto-name {
-    font-size: 0.8rem;
-    color: #8c96a3;
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.75);
+}
+
+/* Match highlighting */
+.search-match-mark {
+    background: rgba(0, 229, 255, 0.35);
+    color: #fff;
+    font-weight: 800;
+    border-radius: 2px;
+    padding: 1px 3px;
+    box-shadow: 0 0 6px rgba(0, 229, 255, 0.5);
 }
 
 .ggm-user-selected {

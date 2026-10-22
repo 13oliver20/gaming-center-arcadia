@@ -4,6 +4,7 @@ import './GestorSorteos.css'
 import * as XLSX from 'xlsx'
 import { saveAs } from 'file-saver'
 import { getPeruDateStr, getPeruFormattedDate, getPeruDateParts } from '../../utils/peruTime'
+import { searchUsersList, highlightMatch } from '../../utils/userSearch'
 
 const DIAS_SEMANA = ['L', 'M', 'X', 'J', 'V', 'S', 'D']
 
@@ -14,6 +15,9 @@ const GestorSorteos = () => {
     // Horarios & Historial
     const [horarios, setHorarios] = useState([])
     const [historial, setHistorial] = useState([])
+
+    // Cached users for master search
+    const allUsersRef = useRef([])
 
     // UI states
     const [loading, setLoading] = useState(true)
@@ -176,6 +180,15 @@ const GestorSorteos = () => {
                 setSelectedWinners({})
             }
 
+            // 4. Cargar todos los usuarios en caché para el Buscador Maestro
+            const { data: allUsers } = await supabase
+                .from('usuarios')
+                .select('id, nombre_real, nickname')
+                .order('nickname', { ascending: true })
+            if (allUsers) {
+                allUsersRef.current = allUsers
+            }
+
         } catch (error) {
             console.error(error)
             showToast('❌ Error al cargar datos', 'error')
@@ -299,53 +312,32 @@ const GestorSorteos = () => {
         }
     }
 
-    // --- Search Users & Outside Click ---
-    const searchTimers = useRef({})
+    // --- Search Users & Outside Click (Buscador Maestro) ---
     const searchWrapRefs = useRef({})
 
-    const searchUsers = async (sorteoId, text) => {
-        const cleanTerm = (text || '').trim().replace(/^@/, '')
-        try {
-            let query = supabase.from('usuarios').select('id, nombre_real, nickname')
-            if (cleanTerm) {
-                query = query.or(`nickname.ilike.%${cleanTerm}%,nombre_real.ilike.%${cleanTerm}%`)
-            } else {
-                query = query.order('nickname', { ascending: true })
-            }
-            const { data, error } = await query.limit(8)
-            if (!error && data) {
-                let results = data || []
-                if (cleanTerm) {
-                    const lq = cleanTerm.toLowerCase()
-                    results.sort((a, b) => {
-                        const aNick = (a.nickname || '').toLowerCase()
-                        const bNick = (b.nickname || '').toLowerCase()
-                        const aStarts = aNick.startsWith(lq)
-                        const bStarts = bNick.startsWith(lq)
-                        if (aStarts && !bStarts) return -1
-                        if (!aStarts && bStarts) return 1
-                        const aIncludes = aNick.includes(lq)
-                        const bIncludes = bNick.includes(lq)
-                        if (aIncludes && !bIncludes) return -1
-                        if (!aIncludes && bIncludes) return 1
-                        return aNick.localeCompare(bNick)
-                    })
-                }
-                setSearchResults(prev => ({ ...prev, [sorteoId]: results }))
-            }
-        } catch (err) {
-            console.error('Error searching users:', err)
+    const searchUsers = (sorteoId, text) => {
+        const users = allUsersRef.current
+        if (users && users.length > 0) {
+            const results = searchUsersList(users, text, 10)
+            setSearchResults(prev => ({ ...prev, [sorteoId]: results }))
+        } else {
+            supabase
+                .from('usuarios')
+                .select('id, nombre_real, nickname')
+                .order('nickname', { ascending: true })
+                .then(({ data }) => {
+                    if (data) {
+                        allUsersRef.current = data
+                        const results = searchUsersList(data, text, 10)
+                        setSearchResults(prev => ({ ...prev, [sorteoId]: results }))
+                    }
+                })
         }
     }
 
     const handleSearchChange = (sorteoId, text) => {
         setSearchTerms(prev => ({ ...prev, [sorteoId]: text }))
-        if (searchTimers.current[sorteoId]) {
-            clearTimeout(searchTimers.current[sorteoId])
-        }
-        searchTimers.current[sorteoId] = setTimeout(() => {
-            searchUsers(sorteoId, text)
-        }, 200)
+        searchUsers(sorteoId, text) // Instantáneo con scoring maestro
     }
 
     const handleSearchFocus = (sorteoId) => {
@@ -475,38 +467,30 @@ const GestorSorteos = () => {
         setEditSearchResults([])
     }
 
-    const handleEditUserSearch = async (text) => {
+    const handleEditUserSearch = (text) => {
         setEditDialog(prev => ({ ...prev, editUsuarioNombre: text, editUsuarioId: null }))
-        const q = text.trim().replace(/^@/, '')
-        const { data } = await supabase
-            .from('usuarios')
-            .select('id, nombre_real, nickname')
-            .or(q ? `nickname.ilike.%${q}%,nombre_real.ilike.%${q}%` : `nickname.neq.NULL`)
-            .limit(8)
-        let results = data || []
-        if (q) {
-            const lq = q.toLowerCase()
-            results.sort((a, b) => {
-                const aNick = (a.nickname || '').toLowerCase()
-                const bNick = (b.nickname || '').toLowerCase()
-                const aStarts = aNick.startsWith(lq)
-                const bStarts = bNick.startsWith(lq)
-                if (aStarts && !bStarts) return -1
-                if (!aStarts && bStarts) return 1
-                return aNick.localeCompare(bNick)
-            })
+        const users = allUsersRef.current
+        if (users && users.length > 0) {
+            setEditSearchResults(searchUsersList(users, text, 10))
+        } else {
+            supabase
+                .from('usuarios')
+                .select('id, nombre_real, nickname')
+                .order('nickname', { ascending: true })
+                .then(({ data }) => {
+                    if (data) {
+                        allUsersRef.current = data
+                        setEditSearchResults(searchUsersList(data, text, 10))
+                    }
+                })
         }
-        setEditSearchResults(results)
     }
 
-    const openEditUserSearch = async () => {
-        // Load first users immediately when the user opens the search, sorted by username
-        const { data } = await supabase
-            .from('usuarios')
-            .select('id, nombre_real, nickname')
-            .order('nickname', { ascending: true })
-            .limit(8)
-        setEditSearchResults(data || [])
+    const openEditUserSearch = () => {
+        const users = allUsersRef.current
+        if (users && users.length > 0) {
+            setEditSearchResults(searchUsersList(users, '', 10))
+        }
         setEditDialog(prev => ({ ...prev, editUsuarioNombre: '', editUsuarioId: null }))
     }
 
@@ -899,27 +883,41 @@ const GestorSorteos = () => {
                                             onFocus={() => handleSearchFocus(h.id)}
                                         />
 
-                                        {/* Search Dropdown */}
-                                        {searchResults[h.id] && searchResults[h.id].length > 0 && (
+                                        {/* Search Dropdown Buscador Maestro */}
+                                        {((searchResults[h.id] && searchResults[h.id].length > 0) || (searchTerms[h.id] && searchTerms[h.id].trim())) && (
                                             <div className="hs-winner-dropdown">
-                                                {searchResults[h.id].map(user => (
-                                                    <div
-                                                        key={user.id}
-                                                        className="hs-dropdown-item"
-                                                        onMouseDown={(e) => e.preventDefault()}
-                                                        onClick={() => promptWinner(h.id, user)}
-                                                    >
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                                            <span className="hs-dropdown-nick" style={{ fontWeight: 700, fontSize: '0.95rem', color: '#00e5ff' }}>
-                                                                @{user.nickname}
-                                                            </span>
-                                                            <span className="hs-dropdown-name" style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.85rem', fontWeight: 400 }}>
-                                                                {user.nombre_real}
-                                                            </span>
+                                                <div className="hs-dropdown-header">
+                                                    <span className="hs-col-user">👤 USUARIO</span>
+                                                    <span className="hs-col-name">📋 NOMBRE REAL</span>
+                                                </div>
+                                                {searchResults[h.id]?.length > 0 ? (
+                                                    searchResults[h.id].map(user => (
+                                                        <div
+                                                            key={user.id}
+                                                            className="hs-dropdown-item"
+                                                            onMouseDown={(e) => e.preventDefault()}
+                                                            onClick={() => promptWinner(h.id, user)}
+                                                        >
+                                                            <div className="hs-col-user">
+                                                                <span className="hs-dropdown-nick">
+                                                                    @{highlightMatch(user.nickname, searchTerms[h.id])}
+                                                                </span>
+                                                            </div>
+                                                            <div className="hs-col-name">
+                                                                <span className="hs-dropdown-name">
+                                                                    {highlightMatch(user.nombre_real, searchTerms[h.id])}
+                                                                </span>
+                                                            </div>
                                                         </div>
-                                                        <span style={{ fontSize: '0.8rem', color: '#a78bfa', opacity: 0.85 }}>Elegir ➔</span>
+                                                    ))
+                                                ) : (
+                                                    <div className="hs-dropdown-empty">
+                                                        <span>🔍 No se encontraron usuarios con "{searchTerms[h.id]}"</span>
+                                                        <span style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.4)' }}>
+                                                            Intenta con otro @usuario o nombre real
+                                                        </span>
                                                     </div>
-                                                ))}
+                                                )}
                                             </div>
                                         )}
                                     </>
@@ -1340,10 +1338,18 @@ const GestorSorteos = () => {
                                         )}
                                         {!editDialog.editUsuarioId && editSearchResults.length > 0 && (
                                             <div className="hs-winner-dropdown" style={{ zIndex: 9999 }}>
+                                                <div className="hs-dropdown-header">
+                                                    <span className="hs-col-user">👤 USUARIO</span>
+                                                    <span className="hs-col-name">📋 NOMBRE REAL</span>
+                                                </div>
                                                 {editSearchResults.map(user => (
-                                                    <div key={user.id} className="hs-dropdown-item" onClick={() => selectEditUser(user)}>
-                                                        <span className="hs-dropdown-name">{user.nombre_real}</span>
-                                                        <span className="hs-dropdown-nick">@{user.nickname}</span>
+                                                    <div key={user.id} className="hs-dropdown-item" onMouseDown={e => e.preventDefault()} onClick={() => selectEditUser(user)}>
+                                                        <div className="hs-col-user">
+                                                            <span className="hs-dropdown-nick">@{highlightMatch(user.nickname, editDialog.editUsuarioNombre)}</span>
+                                                        </div>
+                                                        <div className="hs-col-name">
+                                                            <span className="hs-dropdown-name">{highlightMatch(user.nombre_real, editDialog.editUsuarioNombre)}</span>
+                                                        </div>
                                                     </div>
                                                 ))}
                                             </div>
