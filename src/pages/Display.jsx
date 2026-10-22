@@ -22,25 +22,6 @@ const Display = () => {
     const [isTiendaOpen, setIsTiendaOpen] = useState(false)
     const [tiendaVisible, setTiendaVisible] = useState(true)
 
-    // Estados de carga de widgets para mostrarlos todos al mismo tiempo
-    const [qrLoaded, setQrLoaded] = useState(false)
-    const [sorteosLoaded, setSorteosLoaded] = useState(false)
-    const [logoLoaded, setLogoLoaded] = useState(false)
-    const [textLoaded, setTextLoaded] = useState(false)
-
-    const isReady = qrLoaded && sorteosLoaded && logoLoaded && textLoaded
-
-    // Fallback de seguridad: si después de 2.5s algún widget tarda en responder en CyberClient, mostrar pantalla
-    useEffect(() => {
-        const timeout = setTimeout(() => {
-            setQrLoaded(true)
-            setSorteosLoaded(true)
-            setLogoLoaded(true)
-            setTextLoaded(true)
-        }, 2500)
-        return () => clearTimeout(timeout)
-    }, [])
-
     // Cargar visibilidad de tienda y suscribirse en tiempo real
     useEffect(() => {
         if (!supabase) return
@@ -197,23 +178,7 @@ const Display = () => {
     })
 
     return (
-        <>
-            {!isReady && (
-                <div style={{
-                    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-                    display: 'flex', justifyContent: 'center', alignItems: 'center',
-                    backgroundColor: '#05050f', color: '#fff',
-                    fontFamily: 'Inter, sans-serif', fontSize: '1.2rem',
-                    zIndex: 9999, letterSpacing: '2px', opacity: 0.8
-                }}>
-                    INICIANDO SISTEMA...
-                </div>
-            )}
-            <div className="display-page" style={{ 
-                opacity: isReady ? 1 : 0, 
-                transition: 'opacity 0.8s ease-in',
-                pointerEvents: isReady ? 'auto' : 'none' 
-            }}>
+        <div className="display-page">
             {/* Reloj y Fecha (Esquinas Superiores) */}
             <div className="display-top-left-date">
                 {dateFormatted}
@@ -281,8 +246,7 @@ const Display = () => {
 
             {/* Modal de la tienda */}
             <TiendaModal isOpen={isTiendaOpen} onClose={() => setIsTiendaOpen(false)} />
-            </div>
-        </>
+        </div>
     )
 }
 

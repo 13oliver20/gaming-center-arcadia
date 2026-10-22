@@ -57,8 +57,6 @@ const DisplayLogoWidget = ({ onLoaded }) => {
         }
     }, [])
 
-    if (!layoutLoaded) return null
-
     const wrapperStyle = {
         position: 'fixed',
         left: `calc(50% + ${layout.pos_x}px)`,

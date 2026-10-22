@@ -1,17 +1,19 @@
-import React from 'react'
+import React, { Suspense, lazy } from 'react'
 import ReactDOM from 'react-dom/client'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import Display from './pages/Display'
-import Admin from './pages/Admin'
-import GestionUsuarios from './pages/admin/GestionUsuarios'
-import GestorQRs from './pages/admin/GestorQRs'
-import GestorSorteos from './pages/admin/GestorSorteos'
-import GestorGanadoresMensuales from './pages/admin/GestorGanadoresMensuales'
-import GestorAnuncios from './pages/admin/GestorAnuncios'
-import GestorBeneficios from './pages/admin/GestorBeneficios'
-import GestorTienda from './pages/admin/GestorTienda'
-import GestorDisplayAdmin from './pages/admin/GestorDisplayAdmin'
 import './index.css'
+
+// Lazy-loading de rutas administrativas pesadas (incluyendo xlsx de gestión de usuarios)
+const Admin = lazy(() => import('./pages/Admin'))
+const GestionUsuarios = lazy(() => import('./pages/admin/GestionUsuarios'))
+const GestorQRs = lazy(() => import('./pages/admin/GestorQRs'))
+const GestorSorteos = lazy(() => import('./pages/admin/GestorSorteos'))
+const GestorGanadoresMensuales = lazy(() => import('./pages/admin/GestorGanadoresMensuales'))
+const GestorAnuncios = lazy(() => import('./pages/admin/GestorAnuncios'))
+const GestorBeneficios = lazy(() => import('./pages/admin/GestorBeneficios'))
+const GestorTienda = lazy(() => import('./pages/admin/GestorTienda'))
+const GestorDisplayAdmin = lazy(() => import('./pages/admin/GestorDisplayAdmin'))
 
 // Script para cambiar automáticamente el favicon blanco a negro usando Canvas HTML5
 const setBlackFavicon = () => {
@@ -46,19 +48,21 @@ setBlackFavicon();
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Navigate to="/display" replace />} />
-        <Route path="/display" element={<Display />} />
-        <Route path="/admin" element={<Admin />} />
-        <Route path="/admin/usuarios" element={<Admin><GestionUsuarios /></Admin>} />
-        <Route path="/admin/qrs" element={<Admin><GestorQRs /></Admin>} />
-        <Route path="/admin/sorteos" element={<Admin><GestorSorteos /></Admin>} />
-        <Route path="/admin/ganadores-mensuales" element={<Admin><GestorGanadoresMensuales /></Admin>} />
-        <Route path="/admin/anuncio" element={<Admin><GestorAnuncios /></Admin>} />
-        <Route path="/admin/beneficios" element={<Admin><GestorBeneficios /></Admin>} />
-        <Route path="/admin/tienda" element={<Admin><GestorTienda /></Admin>} />
-        <Route path="/admin/display" element={<Admin><GestorDisplayAdmin /></Admin>} />
-      </Routes>
+      <Suspense fallback={<div style={{ minHeight: '100vh', background: '#05050f', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#00e5ff' }}>Cargando...</div>}>
+        <Routes>
+          <Route path="/" element={<Navigate to="/display" replace />} />
+          <Route path="/display" element={<Display />} />
+          <Route path="/admin" element={<Admin />} />
+          <Route path="/admin/usuarios" element={<Admin><GestionUsuarios /></Admin>} />
+          <Route path="/admin/qrs" element={<Admin><GestorQRs /></Admin>} />
+          <Route path="/admin/sorteos" element={<Admin><GestorSorteos /></Admin>} />
+          <Route path="/admin/ganadores-mensuales" element={<Admin><GestorGanadoresMensuales /></Admin>} />
+          <Route path="/admin/anuncio" element={<Admin><GestorAnuncios /></Admin>} />
+          <Route path="/admin/beneficios" element={<Admin><GestorBeneficios /></Admin>} />
+          <Route path="/admin/tienda" element={<Admin><GestorTienda /></Admin>} />
+          <Route path="/admin/display" element={<Admin><GestorDisplayAdmin /></Admin>} />
+        </Routes>
+      </Suspense>
     </BrowserRouter>
   </React.StrictMode>,
 )
