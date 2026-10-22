@@ -1,6 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { supabase } from '../../supabaseClient'
 import './GestorGanadoresMensuales.css'
+import {
+    getPeruDateParts,
+    getPeruMonthRange,
+    getPeruMonthName
+} from '../../utils/peruTime'
 
 const GestorGanadoresMensuales = () => {
     // State for History
@@ -60,10 +65,23 @@ const GestorGanadoresMensuales = () => {
         return () => supabase.removeChannel(channel)
     }, [])
 
-    // Load initial data assuming table `ganadores_mensuales` might exist
+    // Cargar datos iniciales y configurar detector de cambio de mes en Perú (GMT-5)
     useEffect(() => {
         fetchGanadores()
         fetchHistorial()
+
+        // Monitorear periódicamente si cambia el mes en Perú para reiniciar la vista a las 00:00 del día 1
+        let lastMonthKey = `${getPeruDateParts().year}-${getPeruDateParts().month}`
+        const monthCheckTimer = setInterval(() => {
+            const currentMonthKey = `${getPeruDateParts().year}-${getPeruDateParts().month}`
+            if (currentMonthKey !== lastMonthKey) {
+                lastMonthKey = currentMonthKey
+                fetchGanadores()
+                fetchHistorial()
+            }
+        }, 10000)
+
+        return () => clearInterval(monthCheckTimer)
     }, [])
 
     const fetchHistorial = async () => {
@@ -81,20 +99,18 @@ const GestorGanadoresMensuales = () => {
             }
 
             if (data && data.length > 0) {
-                // Determine current month so we don't show it in "Historial"
-                const now = new Date()
-                const currentYear = now.getFullYear()
-                const currentMonth = now.getMonth()
+                // Determinar el mes actual en Perú (GMT-5) para no mezclarlo en el historial
+                const { year: currentYear, month: currentMonth } = getPeruDateParts()
 
                 const agrupado = {}
 
                 data.forEach(item => {
-                    const date = new Date(item.created_at)
-                    const year = date.getFullYear()
-                    const month = date.getMonth()
+                    const itemParts = getPeruDateParts(new Date(item.created_at))
+                    const year = itemParts.year
+                    const month = itemParts.month - 1 // 0-indexed para getMonthName
 
-                    // Skip current month (they are in the top active section)
-                    if (year === currentYear && month === currentMonth) return
+                    // Omitir el mes actual (sus ganadores pertenecen al panel activo superior)
+                    if (year === currentYear && itemParts.month === currentMonth) return
 
                     if (!agrupado[year]) agrupado[year] = {}
                     if (!agrupado[year][month]) agrupado[year][month] = []
@@ -102,7 +118,7 @@ const GestorGanadoresMensuales = () => {
                     agrupado[year][month].push(item)
                 })
 
-                // Sort the arrays by position for safety
+                // Ordenar por posición ascendente
                 Object.keys(agrupado).forEach(yr => {
                     Object.keys(agrupado[yr]).forEach(mo => {
                         agrupado[yr][mo].sort((a, b) => a.posicion - b.posicion)
@@ -111,11 +127,13 @@ const GestorGanadoresMensuales = () => {
 
                 setHistorialAgrupado(agrupado)
 
-                // by default expand latest year
+                // Expandir por defecto el año más reciente
                 const years = Object.keys(agrupado).sort((a, b) => b - a)
                 if (years.length > 0) {
                     setExpandedYears({ [years[0]]: true })
                 }
+            } else {
+                setHistorialAgrupado({})
             }
         } catch (err) {
             console.error(err)
@@ -131,19 +149,16 @@ const GestorGanadoresMensuales = () => {
     const fetchGanadores = async () => {
         setLoadingDb(true)
         try {
-            const now = new Date()
-            const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
-            const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999).toISOString()
+            // Rango exacto del mes en hora de Perú (00:00:00 del día 1 hasta 23:59:59 del último día)
+            const { startIso, endIso } = getPeruMonthRange()
 
-            // Check if table exists indirectly or just try selecting
             const { data, error } = await supabase
                 .from('ganadores_mensuales')
                 .select('posicion, puntos, usuario_id, usuarios ( id, nickname, nombre_real )')
-                .gte('created_at', startOfMonth)
-                .lte('created_at', endOfMonth)
+                .gte('created_at', startIso)
+                .lte('created_at', endIso)
 
             if (error) {
-                // If the error code means table not found, we can silently fail or notify
                 if (error.code === '42P01') {
                     console.log('La tabla ganadores_mensuales no existe aún. Mostrará panel vacío.')
                 } else {
@@ -152,17 +167,17 @@ const GestorGanadoresMensuales = () => {
                 return
             }
 
-            if (data && data.length > 0) {
-                let initGanadores = [...ganadores]
-                data.forEach(row => {
-                    const idx = initGanadores.findIndex(g => g.pos === row.posicion)
-                    if (idx !== -1) {
-                        initGanadores[idx].usuario = row.usuarios
-                        initGanadores[idx].puntos = row.puntos || ''
-                    }
-                })
-                setGanadores(initGanadores)
-            }
+            // Mapear exactamente las 5 posiciones (si no hay datos o es nuevo mes, quedan limpias esperando nuevos ganadores)
+            const updatedGanadores = [1, 2, 3, 4, 5].map(pos => {
+                const found = (data || []).find(r => r.posicion === pos)
+                return {
+                    pos,
+                    usuario: found?.usuarios || null,
+                    puntos: found?.puntos != null ? found.puntos : ''
+                }
+            })
+            setGanadores(updatedGanadores)
+
         } catch (e) {
             console.error(e)
         } finally {
@@ -268,17 +283,16 @@ const GestorGanadoresMensuales = () => {
         try {
             const targetData = ganadores.find(g => g.pos === confirmDialogPos)
 
-            const now = new Date()
-            const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
-            const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999).toISOString()
+            // Rango mensual en Perú (GMT-5)
+            const { startIso, endIso } = getPeruMonthRange()
 
-            // Upsert mechanism: delete old record for this pos ONLY for the current month, then insert
+            // Upsert mechanism: delete old record for this pos ONLY for the current month in Peru, then insert
             const { error: delError } = await supabase
                 .from('ganadores_mensuales')
                 .delete()
                 .eq('posicion', confirmDialogPos)
-                .gte('created_at', startOfMonth)
-                .lte('created_at', endOfMonth)
+                .gte('created_at', startIso)
+                .lte('created_at', endIso)
 
             if (delError && delError.code !== '42P01') {
                 throw delError
@@ -322,7 +336,9 @@ const GestorGanadoresMensuales = () => {
             <div className="ggm-header" style={{ display: 'flex', flexWrap: 'wrap', gap: '20px', alignItems: 'center' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <span className="ggm-header-icon">🏅</span>
-                    <h2 className="ggm-title" style={{ margin: 0 }}>Gestor de Ganadores Mensuales</h2>
+                    <h2 className="ggm-title" style={{ margin: 0 }}>
+                        Gestor de Ganadores Mensuales <span style={{ color: '#00e5ff', fontSize: '1.05rem', marginLeft: '8px', fontWeight: 500 }}>({getPeruMonthRange().monthName} {getPeruMonthRange().year})</span>
+                    </h2>
                 </div>
             </div>
 

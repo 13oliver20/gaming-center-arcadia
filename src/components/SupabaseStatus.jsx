@@ -91,7 +91,8 @@ export default function SupabaseStatus() {
     const { label, dot, badge, icon } = config[status]
 
     const timeStr = lastChecked
-        ? lastChecked.toLocaleTimeString('es-MX', {
+        ? lastChecked.toLocaleTimeString('es-PE', {
+              timeZone: 'America/Lima',
               hour: '2-digit',
               minute: '2-digit',
               second: '2-digit',

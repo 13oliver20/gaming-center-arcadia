@@ -161,7 +161,7 @@ const GestionUsuarios = () => {
                 'Nombre Real': u.nombre_real,
                 'Nickname': u.nickname,
                 'Fecha de Registro': u.created_at
-                    ? new Date(u.created_at).toLocaleString('es-ES') : ''
+                    ? new Date(u.created_at).toLocaleString('es-PE', { timeZone: 'America/Lima' }) : ''
             }))
             const ws = XLSX.utils.json_to_sheet(rows)
             const wb = XLSX.utils.book_new()
@@ -271,7 +271,8 @@ const GestionUsuarios = () => {
 
     const formatDate = (iso) => {
         if (!iso) return '—'
-        return new Date(iso).toLocaleString('es-ES', {
+        return new Date(iso).toLocaleString('es-PE', {
+            timeZone: 'America/Lima',
             day: '2-digit', month: '2-digit', year: 'numeric',
             hour: '2-digit', minute: '2-digit'
         })

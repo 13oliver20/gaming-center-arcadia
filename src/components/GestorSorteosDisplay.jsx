@@ -1,6 +1,12 @@
 import React, { useState, useEffect } from 'react'
 import { supabase } from '../supabaseClient'
 import './GestorSorteosDisplay.css'
+import {
+    getPeruDateStr,
+    getPeruFormattedDate,
+    getPeruDayChar,
+    getPeruMonthRange
+} from '../utils/peruTime'
 
 const SORTEOS_LAYOUT_ID = 'sorteos_layout'
 const DEFAULT_SORTEOS_LAYOUT = { pos_x: 30, pos_y: 0, scale: 1.0 }
@@ -24,25 +30,19 @@ const GestorSorteosDisplay = ({ onLoaded }) => {
     const [layout, setLayout] = useState(getInitialLayout)
     const [layoutLoaded, setLayoutLoaded] = useState(false)
 
-    const getPeruDate = () => {
-        const now = new Date()
-        const peruTimeStr = now.toLocaleString("en-US", { timeZone: "America/Lima" })
-        const peruDate = new Date(peruTimeStr)
-        const year = peruDate.getFullYear()
-        const month = String(peruDate.getMonth() + 1).padStart(2, '0')
-        const day = String(peruDate.getDate()).padStart(2, '0')
-        const jsDayMap = ['D', 'L', 'M', 'X', 'J', 'V', 'S']
-        return {
-            todayStr: `${year}-${month}-${day}`,
-            formattedDate: `${day}/${month}/${year}`,
-            todayChar: jsDayMap[peruDate.getDay()]
-        }
-    }
-
-    const { todayStr, formattedDate, todayChar } = getPeruDate()
+    // Estado de fecha en Perú (GMT-5) que se actualiza reactivamente a las 00:00
+    const [todayInfo, setTodayInfo] = useState(() => ({
+        todayStr: getPeruDateStr(),
+        formattedDate: getPeruFormattedDate(),
+        todayChar: getPeruDayChar()
+    }))
 
     const fetchData = async () => {
         try {
+            // Fecha y rango de mes actual en Perú (GMT-5)
+            const currentTodayStr = getPeruDateStr()
+            const { startIso, endIso } = getPeruMonthRange()
+
             // 1. Config
             const { data: cData } = await supabase
                 .from('sorteos_configuracion')
@@ -58,11 +58,11 @@ const GestorSorteosDisplay = ({ onLoaded }) => {
                 .order('orden', { ascending: true })
             if (hData) setHorarios(hData)
 
-            // 3. Winners for today
+            // 3. Ganadores del día actual (si cambió el día a las 00:00, no habrá registros y se mostrará vacío esperando nuevos ganadores)
             const { data: histData } = await supabase
                 .from('sorteos_historial')
                 .select('*')
-                .eq('fecha', todayStr)
+                .eq('fecha', currentTodayStr)
 
             if (histData && histData.length > 0) {
                 const userIds = [...new Set(histData.map(h => h.usuario_id))]
@@ -83,16 +83,12 @@ const GestorSorteosDisplay = ({ onLoaded }) => {
                 setTodayWinners({})
             }
 
-            // 4. Monthly Winners
-            const now = new Date()
-            const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
-            const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999).toISOString()
-
+            // 4. Ganadores Mensuales dentro del mes actual en Perú (desde 00:00 del día 1 hasta 23:59:59 del último día del mes)
             const { data: mData } = await supabase
                 .from('ganadores_mensuales')
                 .select('posicion, puntos, usuario_id, usuarios ( id, nickname )')
-                .gte('created_at', startOfMonth)
-                .lte('created_at', endOfMonth)
+                .gte('created_at', startIso)
+                .lte('created_at', endIso)
                 .order('posicion', { ascending: true })
 
             if (mData) {
@@ -198,14 +194,32 @@ const GestorSorteosDisplay = ({ onLoaded }) => {
             } catch (_) {}
         }, 2000)
 
+        // Monitoreo constante de cambio de día a las 00:00 (hora Perú GMT-5) para restablecer espacios automáticamente
+        const dateCheckInterval = setInterval(() => {
+            const currentStr = getPeruDateStr()
+            setTodayInfo(prev => {
+                if (prev.todayStr !== currentStr) {
+                    // El día ha cambiado en Perú: refrescar datos inmediatamente
+                    fetchData()
+                    return {
+                        todayStr: currentStr,
+                        formattedDate: getPeruFormattedDate(),
+                        todayChar: getPeruDayChar()
+                    }
+                }
+                return prev
+            })
+        }, 5000)
+
         return () => {
             supabase.removeChannel(channel)
             clearInterval(beneficiosInterval)
             clearInterval(layoutInterval)
+            clearInterval(dateCheckInterval)
         }
     }, [])
 
-    const shouldDisplay = config?.dias_activos?.includes(todayChar)
+    const shouldDisplay = config?.dias_activos?.includes(todayInfo.todayChar)
     if (!shouldDisplay || !layoutLoaded) return null
 
     const widgetStyle = {
@@ -254,7 +268,7 @@ const GestorSorteosDisplay = ({ onLoaded }) => {
                     {activeTab === 'diarios' && (
                         <div className="gsd-diarios-view">
                             <h3 className="gsd-title">GANADORES DEL DIA</h3>
-                            <p className="gsd-date">{formattedDate}</p>
+                            <p className="gsd-date">{todayInfo.formattedDate}</p>
                             <div className="gsd-horarios-list">
                                 {horarios.map(h => {
                                     const winnerName = todayWinners[h.id]

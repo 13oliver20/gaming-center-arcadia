@@ -163,14 +163,16 @@ const Display = () => {
         }
     }, [])
 
-    // Formateo de Fecha y Hora
-    const dateFormatted = time.toLocaleDateString('es-ES', {
+    // Formateo de Fecha y Hora (GMT-5 Lima, Perú)
+    const dateFormatted = time.toLocaleDateString('es-PE', {
+        timeZone: 'America/Lima',
         day: '2-digit',
         month: '2-digit',
         year: 'numeric'
     })
 
     const timeFormatted = time.toLocaleTimeString('en-US', {
+        timeZone: 'America/Lima',
         hour: '2-digit',
         minute: '2-digit',
         second: '2-digit',

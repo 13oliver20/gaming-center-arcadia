@@ -3,6 +3,7 @@ import { supabase } from '../../supabaseClient'
 import './GestorSorteos.css'
 import * as XLSX from 'xlsx'
 import { saveAs } from 'file-saver'
+import { getPeruDateStr, getPeruFormattedDate, getPeruDateParts } from '../../utils/peruTime'
 
 const DIAS_SEMANA = ['L', 'M', 'X', 'J', 'V', 'S', 'D']
 
@@ -13,17 +14,6 @@ const GestorSorteos = () => {
     // Horarios & Historial
     const [horarios, setHorarios] = useState([])
     const [historial, setHistorial] = useState([])
-
-    // Date Helper para Perú
-    const getPeruDateStr = () => {
-        const now = new Date()
-        const peruTimeStr = now.toLocaleString("en-US", { timeZone: "America/Lima" })
-        const peruDate = new Date(peruTimeStr)
-        const year = peruDate.getFullYear()
-        const month = String(peruDate.getMonth() + 1).padStart(2, '0')
-        const day = String(peruDate.getDate()).padStart(2, '0')
-        return `${year}-${month}-${day}`
-    }
 
     // UI states
     const [loading, setLoading] = useState(true)
@@ -85,13 +75,30 @@ const GestorSorteos = () => {
             if (cErr) throw cErr
             if (cData) setConfig({ is_active: cData.is_active, dias_activos: cData.dias_activos || [] })
 
-            // 2. Fetch Horarios
+            // 2. Fetch Horarios (con predeterminados 1:00 PM y 5:00 PM)
             const { data: hData, error: hErr } = await supabase
                 .from('sorteos_horarios')
                 .select('*')
                 .order('orden', { ascending: true })
             if (hErr) throw hErr
-            setHorarios(hData || [])
+
+            let currentHorarios = hData || []
+            if (currentHorarios.length === 0) {
+                // Sorteos predeterminados: Sorteo 1 a la 1:00 PM y Sorteo 2 a las 5:00 PM
+                const defaultHorarios = [
+                    { hora: '1:00 PM', orden: 1 },
+                    { hora: '5:00 PM', orden: 2 }
+                ]
+                const { data: seeded, error: seedErr } = await supabase
+                    .from('sorteos_horarios')
+                    .insert(defaultHorarios)
+                    .select()
+                    .order('orden', { ascending: true })
+                if (!seedErr && seeded && seeded.length > 0) {
+                    currentHorarios = seeded
+                }
+            }
+            setHorarios(currentHorarios)
 
             // 3. Fetch Historial (join with usuarios)
             // Note: Since no strict FK is enforced by default in our setup to avoid name clashes, 
@@ -124,8 +131,8 @@ const GestorSorteos = () => {
                         return b.fecha.localeCompare(a.fecha) // fecha desc
                     }
 
-                    const hA = hData?.find(x => x.id === a.sorteo_id)?.hora || '00:00 AM'
-                    const hB = hData?.find(x => x.id === b.sorteo_id)?.hora || '00:00 AM'
+                    const hA = currentHorarios.find(x => x.id === a.sorteo_id)?.hora || '00:00 AM'
+                    const hB = currentHorarios.find(x => x.id === b.sorteo_id)?.hora || '00:00 AM'
 
                     // Simple parse to 24h for comparison: "1:00 PM" -> "13:00"
                     const to24 = (hStr) => {
@@ -169,6 +176,18 @@ const GestorSorteos = () => {
 
     useEffect(() => {
         fetchData()
+
+        // Monitoreo a las 00:00 (Perú GMT-5) para restablecer automáticamente los espacios del nuevo día
+        let lastDate = getPeruDateStr()
+        const midnightTimer = setInterval(() => {
+            const currentDate = getPeruDateStr()
+            if (currentDate !== lastDate) {
+                lastDate = currentDate
+                fetchData()
+            }
+        }, 5000)
+
+        return () => clearInterval(midnightTimer)
     }, [])
 
     // --- Config Actions ---
@@ -201,7 +220,10 @@ const GestorSorteos = () => {
     // --- Horarios Actions ---
     const addHorario = async () => {
         const newOrden = horarios.length > 0 ? Math.max(...horarios.map(h => h.orden)) + 1 : 1
-        const newH = { hora: '12:00 PM', orden: newOrden }
+        let defaultHora = '8:00 PM'
+        if (newOrden === 1) defaultHora = '1:00 PM'
+        else if (newOrden === 2) defaultHora = '5:00 PM'
+        const newH = { hora: defaultHora, orden: newOrden }
 
         const { data, error } = await supabase.from('sorteos_horarios').insert([newH]).select()
         if (error) {
