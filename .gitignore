@@ -6,3 +6,7 @@ dist/
 test*.*
 test_*.*
 *.log
+.github/
+
+.vercel
+.env*

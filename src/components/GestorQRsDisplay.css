@@ -1,7 +1,7 @@
 .qr-display-widget {
     position: fixed;
     width: 320px;
-    background: rgba(10, 15, 25, 0.75);
+    background: rgba(10, 15, 25, 0.88);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border: 1px solid rgba(0, 255, 170, 0.15);
@@ -17,6 +17,11 @@
     animation: fadeInQR 0.8s ease-out;
 }
 
+/* Fallback de espaciado para Chromium 79 (CefSharp) */
+.qr-display-widget > * + * {
+    margin-top: 20px;
+}
+
 @keyframes fadeInQR {
     from { opacity: 0; }
     to   { opacity: 1; }
@@ -27,6 +32,10 @@
     gap: 10px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     padding-bottom: 12px;
+}
+
+.qr-tab + .qr-tab {
+    margin-left: 10px;
 }
 
 .qr-tab {
@@ -49,6 +58,7 @@
 
 .qr-tab-icon {
     font-size: 1.1rem;
+    margin-right: 6px;
 }
 
 .qr-tab:hover {
@@ -78,6 +88,10 @@
     flex-direction: column;
     align-items: center;
     gap: 20px;
+}
+
+.qr-content-area > * + * {
+    margin-top: 20px;
 }
 
 .qr-image-wrapper {

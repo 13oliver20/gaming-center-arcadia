@@ -11,6 +11,47 @@
     href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;900&family=Dancing+Script:wght@700&display=swap"
     rel="stylesheet" />
   <title>Gaming-Center-Arcadia</title>
+  <!-- Polyfills para compatibilidad con Chromium 79 (CefSharp / CyberClient) -->
+  <script>
+    (function() {
+      // globalThis
+      if (typeof globalThis === 'undefined') {
+        window.globalThis = window;
+      }
+      // String.prototype.replaceAll
+      if (!String.prototype.replaceAll) {
+        String.prototype.replaceAll = function(target, replacement) {
+          if (Object.prototype.toString.call(target).toLowerCase() === '[object regexp]') {
+            return this.replace(target, replacement);
+          }
+          return this.replace(new RegExp(target.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), replacement);
+        };
+      }
+      // Array.prototype.at
+      if (!Array.prototype.at) {
+        Array.prototype.at = function(n) {
+          n = Math.trunc(n) || 0;
+          if (n < 0) n += this.length;
+          if (n < 0 || n >= this.length) return undefined;
+          return this[n];
+        };
+      }
+      // crypto.randomUUID
+      if (typeof crypto !== 'undefined' && !crypto.randomUUID) {
+        crypto.randomUUID = function() {
+          return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, function(c) {
+            return (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16);
+          });
+        };
+      }
+      // structuredClone
+      if (typeof structuredClone === 'undefined') {
+        window.structuredClone = function(obj) {
+          return JSON.parse(JSON.stringify(obj));
+        };
+      }
+    })();
+  </script>
 </head>
 
 <body>

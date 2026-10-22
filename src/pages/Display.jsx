@@ -30,6 +30,17 @@ const Display = () => {
 
     const isReady = qrLoaded && sorteosLoaded && logoLoaded && textLoaded
 
+    // Fallback de seguridad: si después de 2.5s algún widget tarda en responder en CyberClient, mostrar pantalla
+    useEffect(() => {
+        const timeout = setTimeout(() => {
+            setQrLoaded(true)
+            setSorteosLoaded(true)
+            setLogoLoaded(true)
+            setTextLoaded(true)
+        }, 2500)
+        return () => clearTimeout(timeout)
+    }, [])
+
     // Cargar visibilidad de tienda y suscribirse en tiempo real
     useEffect(() => {
         if (!supabase) return

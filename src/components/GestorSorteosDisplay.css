@@ -1,7 +1,7 @@
 .gsd-widget {
     position: fixed;
     width: 320px;
-    background: rgba(10, 15, 25, 0.75);
+    background: rgba(10, 15, 25, 0.88);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border: 1px solid rgba(255, 0, 170, 0.2);
@@ -17,6 +17,11 @@
     animation: fadeInSorteos 0.8s ease-out;
 }
 
+/* Fallback de espaciado para Chromium 79 (CefSharp) */
+.gsd-widget > * + * {
+    margin-top: 15px;
+}
+
 @keyframes fadeInSorteos {
     from { opacity: 0; }
     to   { opacity: 1; }
@@ -25,6 +30,10 @@
 .gsd-tabs {
     display: flex;
     gap: 5px;
+}
+
+.gsd-tab + .gsd-tab {
+    margin-left: 5px;
 }
 
 .gsd-tab {
@@ -43,6 +52,10 @@
     justify-content: center;
     gap: 6px;
     transition: all 0.2s ease-in-out;
+}
+
+.gsd-tab .gsd-icon {
+    margin-right: 6px;
 }
 
 .gsd-tab:hover {
@@ -168,6 +181,10 @@
     display: flex;
     flex-direction: column;
     gap: 12px;
+}
+
+.gsd-horario-card + .gsd-horario-card {
+    margin-top: 12px;
 }
 
 .gsd-horario-card {

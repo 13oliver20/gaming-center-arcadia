@@ -36,6 +36,11 @@
     pointer-events: none;
 }
 
+/* Fallback de espaciado para navegadores antiguos (Chromium 79 / CefSharp) sin soporte de flex gap */
+.glow-container-wrapper > * + * {
+    margin-top: 15px;
+}
+
 @keyframes floatGlow {
     0% {
         transform: translateY(0px);
@@ -496,8 +501,9 @@
     /* Tamaño mediano */
     font-weight: 700;
     letter-spacing: 2px;
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(10, 10, 20, 0.75);
     /* Fondo oscuro semitransparente para mejor lectura */
+    -webkit-backdrop-filter: blur(10px);
     backdrop-filter: blur(10px);
     padding: 10px 20px;
     border-radius: 8px;
@@ -542,11 +548,16 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    margin-bottom: 8px;
 }
 
 /* Pulsing neon ring behind the icon */
 .tienda-glow-ring {
     position: absolute;
+    top: -4px;
+    left: -4px;
+    right: -4px;
+    bottom: -4px;
     inset: -4px;
     border-radius: 50%;
     background: conic-gradient(#ff4eb8, #00e5ff, #ffd600, #00e676, #ff4eb8);
@@ -570,6 +581,10 @@
 .tienda-icon-wrap::before {
     content: '';
     position: absolute;
+    top: 2px;
+    left: 2px;
+    right: 2px;
+    bottom: 2px;
     inset: 2px;
     border-radius: 50%;
     background: #070b1a;
