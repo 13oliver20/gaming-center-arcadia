@@ -132,8 +132,13 @@ const GestionUsuarios = () => {
                 showToast('El archivo no tiene filas válidas.', 'error');
                 return
             }
-            const { error } = await supabase.from('usuarios').insert(importDialog.payload)
-            if (error) throw error
+            // Inserción por lotes para evitar límites de tamaño de petición en archivos grandes
+            const BATCH_SIZE = 500
+            for (let i = 0; i < importDialog.payload.length; i += BATCH_SIZE) {
+                const batch = importDialog.payload.slice(i, i + BATCH_SIZE)
+                const { error } = await supabase.from('usuarios').insert(batch)
+                if (error) throw error
+            }
             showToast(`✅ ${importDialog.payload.length} usuario(s) importados.`, 'success')
             setPage(1); fetchUsuarios()
         } catch (err) { showToast('❌ Error al importar: ' + err.message, 'error') }
@@ -184,6 +189,10 @@ const GestionUsuarios = () => {
     const handleDeleteAll = async () => {
         setSaving(true)
         try {
+            // Limpiar dependencias en sorteos_historial y ganadores_mensuales para no violar Foreign Key Constraints
+            await supabase.from('sorteos_historial').delete().neq('id', '00000000-0000-0000-0000-000000000000')
+            await supabase.from('ganadores_mensuales').delete().neq('id', '00000000-0000-0000-0000-000000000000')
+
             const { error } = await supabase.from('usuarios').delete().neq('id', '00000000-0000-0000-0000-000000000000')
             if (error) throw error
             showToast('🗑️ Tabla eliminada correctamente.', 'success')
@@ -240,6 +249,10 @@ const GestionUsuarios = () => {
     const handleDeleteConfirm = async () => {
         setSaving(true)
         try {
+            // Limpiar registros relacionados antes de borrar el usuario
+            await supabase.from('sorteos_historial').delete().eq('usuario_id', deleteDialog.id)
+            await supabase.from('ganadores_mensuales').delete().eq('usuario_id', deleteDialog.id)
+
             const { error } = await supabase
                 .from('usuarios')
                 .delete()
