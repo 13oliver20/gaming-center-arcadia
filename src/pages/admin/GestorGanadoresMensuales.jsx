@@ -190,30 +190,46 @@ const GestorGanadoresMensuales = () => {
         setTimeout(() => setToast(null), 3500)
     }
 
-    // Debounced search for autocomplete
+    // Debounced search for autocomplete con prioridad en nombre de usuario (@nickname)
     useEffect(() => {
         if (activeSearch === null) return
 
-        const term = searchTerms[activeSearch]
-        if (!term || term.trim().length === 0) {
-            setSearchResults(prev => ({ ...prev, [activeSearch]: [] }))
-            return
-        }
+        const rawTerm = searchTerms[activeSearch] || ''
+        const cleanTerm = rawTerm.trim().replace(/^@/, '')
 
         const timer = setTimeout(async () => {
             try {
-                const { data, error } = await supabase
-                    .from('usuarios')
-                    .select('id, nickname, nombre_real')
-                    .or(`nickname.ilike.%${term.trim()}%,nombre_real.ilike.%${term.trim()}%`)
-                    .limit(5)
-
+                let query = supabase.from('usuarios').select('id, nickname, nombre_real')
+                if (cleanTerm) {
+                    query = query.or(`nickname.ilike.%${cleanTerm}%,nombre_real.ilike.%${cleanTerm}%`)
+                } else {
+                    query = query.order('nickname', { ascending: true })
+                }
+                const { data, error } = await query.limit(8)
                 if (error) throw error
-                setSearchResults(prev => ({ ...prev, [activeSearch]: data || [] }))
+
+                let results = data || []
+                if (cleanTerm) {
+                    const lq = cleanTerm.toLowerCase()
+                    results.sort((a, b) => {
+                        const aNick = (a.nickname || '').toLowerCase()
+                        const bNick = (b.nickname || '').toLowerCase()
+                        const aStarts = aNick.startsWith(lq)
+                        const bStarts = bNick.startsWith(lq)
+                        if (aStarts && !bStarts) return -1
+                        if (!aStarts && bStarts) return 1
+                        const aIncludes = aNick.includes(lq)
+                        const bIncludes = bNick.includes(lq)
+                        if (aIncludes && !bIncludes) return -1
+                        if (!aIncludes && bIncludes) return 1
+                        return aNick.localeCompare(bNick)
+                    })
+                }
+                setSearchResults(prev => ({ ...prev, [activeSearch]: results }))
             } catch (err) {
                 console.error(err)
             }
-        }, 300)
+        }, 200)
 
         return () => clearTimeout(timer)
     }, [searchTerms, activeSearch])
@@ -378,7 +394,7 @@ const GestorGanadoresMensuales = () => {
                                 <div className="ggm-search-wrapper">
                                     <input
                                         className="ggm-search-input"
-                                        placeholder="Buscar usuario..."
+                                        placeholder="Buscar por @usuario (o nombre)..."
                                         value={searchTerms[pos]}
                                         onChange={(e) => handleSearchChange(pos, e.target.value)}
                                         onFocus={() => isEditing[pos] && setActiveSearch(pos)}
@@ -390,6 +406,7 @@ const GestorGanadoresMensuales = () => {
                                                 <div
                                                     key={u.id}
                                                     className="ggm-autocomplete-item"
+                                                    onMouseDown={(e) => e.preventDefault()}
                                                     onClick={() => selectUser(pos, u)}
                                                 >
                                                     <span className="ggm-auto-nick">@{u.nickname}</span>

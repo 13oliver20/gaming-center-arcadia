@@ -304,17 +304,34 @@ const GestorSorteos = () => {
     const searchWrapRefs = useRef({})
 
     const searchUsers = async (sorteoId, text) => {
-        const q = (text || '').trim()
+        const cleanTerm = (text || '').trim().replace(/^@/, '')
         try {
             let query = supabase.from('usuarios').select('id, nombre_real, nickname')
-            if (q) {
-                query = query.or(`nombre_real.ilike.%${q}%,nickname.ilike.%${q}%`)
+            if (cleanTerm) {
+                query = query.or(`nickname.ilike.%${cleanTerm}%,nombre_real.ilike.%${cleanTerm}%`)
             } else {
-                query = query.order('nombre_real', { ascending: true })
+                query = query.order('nickname', { ascending: true })
             }
-            const { data, error } = await query.limit(6)
+            const { data, error } = await query.limit(8)
             if (!error && data) {
-                setSearchResults(prev => ({ ...prev, [sorteoId]: data }))
+                let results = data || []
+                if (cleanTerm) {
+                    const lq = cleanTerm.toLowerCase()
+                    results.sort((a, b) => {
+                        const aNick = (a.nickname || '').toLowerCase()
+                        const bNick = (b.nickname || '').toLowerCase()
+                        const aStarts = aNick.startsWith(lq)
+                        const bStarts = bNick.startsWith(lq)
+                        if (aStarts && !bStarts) return -1
+                        if (!aStarts && bStarts) return 1
+                        const aIncludes = aNick.includes(lq)
+                        const bIncludes = bNick.includes(lq)
+                        if (aIncludes && !bIncludes) return -1
+                        if (!aIncludes && bIncludes) return 1
+                        return aNick.localeCompare(bNick)
+                    })
+                }
+                setSearchResults(prev => ({ ...prev, [sorteoId]: results }))
             }
         } catch (err) {
             console.error('Error searching users:', err)
@@ -460,21 +477,34 @@ const GestorSorteos = () => {
 
     const handleEditUserSearch = async (text) => {
         setEditDialog(prev => ({ ...prev, editUsuarioNombre: text, editUsuarioId: null }))
-        const q = text.trim()
+        const q = text.trim().replace(/^@/, '')
         const { data } = await supabase
             .from('usuarios')
             .select('id, nombre_real, nickname')
-            .or(q ? `nombre_real.ilike.%${q}%,nickname.ilike.%${q}%` : `nombre_real.neq.NULL`)
+            .or(q ? `nickname.ilike.%${q}%,nombre_real.ilike.%${q}%` : `nickname.neq.NULL`)
             .limit(8)
-        setEditSearchResults(data || [])
+        let results = data || []
+        if (q) {
+            const lq = q.toLowerCase()
+            results.sort((a, b) => {
+                const aNick = (a.nickname || '').toLowerCase()
+                const bNick = (b.nickname || '').toLowerCase()
+                const aStarts = aNick.startsWith(lq)
+                const bStarts = bNick.startsWith(lq)
+                if (aStarts && !bStarts) return -1
+                if (!aStarts && bStarts) return 1
+                return aNick.localeCompare(bNick)
+            })
+        }
+        setEditSearchResults(results)
     }
 
     const openEditUserSearch = async () => {
-        // Load first users immediately when the user opens the search
+        // Load first users immediately when the user opens the search, sorted by username
         const { data } = await supabase
             .from('usuarios')
             .select('id, nombre_real, nickname')
-            .order('nombre_real', { ascending: true })
+            .order('nickname', { ascending: true })
             .limit(8)
         setEditSearchResults(data || [])
         setEditDialog(prev => ({ ...prev, editUsuarioNombre: '', editUsuarioId: null }))
@@ -849,7 +879,7 @@ const GestorSorteos = () => {
                                     }}>
                                         <div>
                                             <span style={{ fontSize: '0.85rem', color: '#00e676', marginRight: '10px' }}>✅ GANADOR:</span>
-                                            <strong>{selectedWinners[h.id].nombre_real}</strong> <span style={{ color: '#00e5ff', fontSize: '0.85rem' }}>@{selectedWinners[h.id].nickname}</span>
+                                            <strong style={{ color: '#00e5ff', fontSize: '1rem' }}>@{selectedWinners[h.id].nickname}</strong> <span style={{ color: 'rgba(255, 255, 255, 0.75)', fontSize: '0.88rem', marginLeft: '6px' }}>({selectedWinners[h.id].nombre_real})</span>
                                         </div>
                                         <button
                                             onClick={() => clearTodayWinner(h.id)}
@@ -863,7 +893,7 @@ const GestorSorteos = () => {
                                         <input
                                             className="hs-winner-input"
                                             type="text"
-                                            placeholder={`Seleccionar Ganador Sorteo #${i + 1}...`}
+                                            placeholder={`Buscar por @usuario (o nombre) para Sorteo #${i + 1}...`}
                                             value={searchTerms[h.id] || ''}
                                             onChange={(e) => handleSearchChange(h.id, e.target.value)}
                                             onFocus={() => handleSearchFocus(h.id)}
@@ -879,8 +909,15 @@ const GestorSorteos = () => {
                                                         onMouseDown={(e) => e.preventDefault()}
                                                         onClick={() => promptWinner(h.id, user)}
                                                     >
-                                                        <span className="hs-dropdown-name">{user.nombre_real}</span>
-                                                        <span className="hs-dropdown-nick">@{user.nickname}</span>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                            <span className="hs-dropdown-nick" style={{ fontWeight: 700, fontSize: '0.95rem', color: '#00e5ff' }}>
+                                                                @{user.nickname}
+                                                            </span>
+                                                            <span className="hs-dropdown-name" style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.85rem', fontWeight: 400 }}>
+                                                                {user.nombre_real}
+                                                            </span>
+                                                        </div>
+                                                        <span style={{ fontSize: '0.8rem', color: '#a78bfa', opacity: 0.85 }}>Elegir ➔</span>
                                                     </div>
                                                 ))}
                                             </div>
@@ -1226,9 +1263,9 @@ const GestorSorteos = () => {
                             <div className="gu-dialog-body">
                                 <p>¿Estás seguro de declarar como ganador a este usuario?</p>
                                 <div className="gu-dialog-preview">
-                                    <span><strong>Nombre:</strong> {confirmDialog.usuario.nombre_real}</span>
-                                    <span><strong>Nickname:</strong> @{confirmDialog.usuario.nickname}</span>
-                                    <span style={{ color: '#00e5ff' }}>Sorteo seleccionado para hoy.</span>
+                                    <span><strong>Usuario:</strong> <strong style={{ color: '#00e5ff', fontSize: '1.05rem' }}>@{confirmDialog.usuario.nickname}</strong></span>
+                                    <span><strong>Nombre Real:</strong> {confirmDialog.usuario.nombre_real}</span>
+                                    <span style={{ color: '#00e676', fontSize: '0.85rem' }}>Sorteo seleccionado para hoy.</span>
                                 </div>
                             </div>
                             <div className="gu-dialog-actions">

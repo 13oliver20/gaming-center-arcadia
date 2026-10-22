@@ -311,14 +311,16 @@ input:checked+.hs-slider:before {
     border-bottom: none;
 }
 
-.hs-dropdown-name {
-    font-weight: 600;
-    color: #fff;
-}
-
 .hs-dropdown-nick {
     color: #00e5ff;
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+
+.hs-dropdown-name {
+    color: rgba(255, 255, 255, 0.7);
     font-size: 0.85rem;
+    font-weight: 400;
 }
 
 .hs-add-btn {
