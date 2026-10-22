@@ -2,20 +2,30 @@ import React, { useState, useEffect } from 'react'
 import { supabase } from '../supabaseClient'
 
 const TEXT_LAYOUT_ID = 'text_layout'
-const DEFAULT_LAYOUT = { pos_x: 0, pos_y: 0, scale: 1.0, texto: 'GAMING CENTER ARCADIA', efecto: 'rgb-flow' }
+const DEFAULT_LAYOUT = { pos_x: 0, pos_y: 40, scale: 0.8, texto: 'GAMING  CENTER ARCADIA', efecto: 'cosmic' }
+
+const getInitialLayout = () => {
+    try {
+        const cached = localStorage.getItem('arcadia_text_layout')
+        if (cached) return JSON.parse(cached)
+    } catch (_) {}
+    return DEFAULT_LAYOUT
+}
 
 const DisplayTextWidget = ({ onLoaded }) => {
-    const [layout, setLayout] = useState(DEFAULT_LAYOUT)
+    const [layout, setLayout] = useState(getInitialLayout)
     const [layoutLoaded, setLayoutLoaded] = useState(false)
 
     const applyLayout = (data) => {
-        setLayout({
+        const next = {
             pos_x:  data.pos_x,
             pos_y:  data.pos_y,
             scale:  data.scale,
             texto:  data.texto  || DEFAULT_LAYOUT.texto,
             efecto: data.efecto || DEFAULT_LAYOUT.efecto,
-        })
+        }
+        setLayout(next)
+        try { localStorage.setItem('arcadia_text_layout', JSON.stringify(next)) } catch (_) {}
     }
 
     const fetchLayout = async () => {

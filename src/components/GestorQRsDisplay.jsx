@@ -3,13 +3,21 @@ import { supabase } from '../supabaseClient'
 import './GestorQRsDisplay.css'
 
 const LAYOUT_ID = 'qr_layout'
-const DEFAULT_LAYOUT = { pos_x: 50, pos_y: 50, scale: 1.0 }
+const DEFAULT_LAYOUT = { pos_x: 30, pos_y: 10, scale: 1.1 }
+
+const getInitialLayout = () => {
+    try {
+        const cached = localStorage.getItem('arcadia_qr_layout')
+        if (cached) return JSON.parse(cached)
+    } catch (_) {}
+    return DEFAULT_LAYOUT
+}
 
 const GestorQRsDisplay = ({ onLoaded }) => {
     const [config, setConfig] = useState({ wifi: null, whatsapp: null })
     const [activeTab, setActiveTab] = useState('whatsapp')
     const [loading, setLoading] = useState(true)
-    const [layout, setLayout] = useState(DEFAULT_LAYOUT)
+    const [layout, setLayout] = useState(getInitialLayout)
 
     useEffect(() => {
         const fetchAll = async () => {
@@ -37,7 +45,9 @@ const GestorQRsDisplay = ({ onLoaded }) => {
                         .single()
                     if (!lErr && lData) {
                         const safeY = (lData.pos_y > 500 || lData.pos_y < -500) ? 0 : lData.pos_y
-                        setLayout({ pos_x: lData.pos_x, pos_y: safeY, scale: lData.scale })
+                        const next = { pos_x: lData.pos_x, pos_y: safeY, scale: lData.scale }
+                        setLayout(next)
+                        try { localStorage.setItem('arcadia_qr_layout', JSON.stringify(next)) } catch (_) {}
                     }
                 } catch (_) {}
 

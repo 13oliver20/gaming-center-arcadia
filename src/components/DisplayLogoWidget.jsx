@@ -2,10 +2,18 @@ import React, { useState, useEffect } from 'react'
 import { supabase } from '../supabaseClient'
 
 const LOGO_LAYOUT_ID = 'logo_layout'
-const DEFAULT_LAYOUT = { pos_x: 0, pos_y: 0, scale: 1.0 }
+const DEFAULT_LAYOUT = { pos_x: 0, pos_y: -200, scale: 1.0 }
+
+const getInitialLayout = () => {
+    try {
+        const cached = localStorage.getItem('arcadia_logo_layout')
+        if (cached) return JSON.parse(cached)
+    } catch (_) {}
+    return DEFAULT_LAYOUT
+}
 
 const DisplayLogoWidget = ({ onLoaded }) => {
-    const [layout, setLayout] = useState(DEFAULT_LAYOUT)
+    const [layout, setLayout] = useState(getInitialLayout)
     const [layoutLoaded, setLayoutLoaded] = useState(false)
 
     const fetchLayout = async () => {
@@ -16,7 +24,9 @@ const DisplayLogoWidget = ({ onLoaded }) => {
                 .eq('id', LOGO_LAYOUT_ID)
                 .single()
             if (!error && data) {
-                setLayout({ pos_x: data.pos_x, pos_y: data.pos_y, scale: data.scale })
+                const next = { pos_x: data.pos_x, pos_y: data.pos_y, scale: data.scale }
+                setLayout(next)
+                try { localStorage.setItem('arcadia_logo_layout', JSON.stringify(next)) } catch (_) {}
             }
         } catch (_) {}
         finally {

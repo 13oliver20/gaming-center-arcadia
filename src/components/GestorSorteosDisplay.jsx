@@ -3,7 +3,15 @@ import { supabase } from '../supabaseClient'
 import './GestorSorteosDisplay.css'
 
 const SORTEOS_LAYOUT_ID = 'sorteos_layout'
-const DEFAULT_SORTEOS_LAYOUT = { pos_x: 50, pos_y: 0, scale: 1.0 }
+const DEFAULT_SORTEOS_LAYOUT = { pos_x: 30, pos_y: 0, scale: 1.0 }
+
+const getInitialLayout = () => {
+    try {
+        const cached = localStorage.getItem('arcadia_sorteos_layout')
+        if (cached) return JSON.parse(cached)
+    } catch (_) {}
+    return DEFAULT_SORTEOS_LAYOUT
+}
 
 const GestorSorteosDisplay = ({ onLoaded }) => {
     const [config, setConfig] = useState(null)
@@ -13,7 +21,7 @@ const GestorSorteosDisplay = ({ onLoaded }) => {
     const [activeTab, setActiveTab] = useState('diarios')
     const [beneficioTexto, setBeneficioTexto] = useState('')
     const [showBeneficios, setShowBeneficios] = useState(false)
-    const [layout, setLayout] = useState(DEFAULT_SORTEOS_LAYOUT)
+    const [layout, setLayout] = useState(getInitialLayout)
     const [layoutLoaded, setLayoutLoaded] = useState(false)
 
     const getPeruDate = () => {
@@ -114,7 +122,9 @@ const GestorSorteosDisplay = ({ onLoaded }) => {
                     .single()
                 if (!lErr && lData) {
                     const safeY = (lData.pos_y > 500 || lData.pos_y < -500) ? 0 : lData.pos_y
-                    setLayout({ pos_x: lData.pos_x, pos_y: safeY, scale: lData.scale })
+                    const next = { pos_x: lData.pos_x, pos_y: safeY, scale: lData.scale }
+                    setLayout(next)
+                    try { localStorage.setItem('arcadia_sorteos_layout', JSON.stringify(next)) } catch (_) {}
                 }
             } catch (_) {}
 
