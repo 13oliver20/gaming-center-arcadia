@@ -43,28 +43,20 @@ const GestorSorteosDisplay = ({ onLoaded }) => {
             const currentTodayStr = getPeruDateStr()
             const { startIso, endIso } = getPeruMonthRange()
 
-            // 1. Config
-            const { data: cData } = await supabase
-                .from('sorteos_configuracion')
-                .select('*')
-                .eq('id', '00000000-0000-0000-0000-000000000001')
-                .single()
-            if (cData) setConfig(cData)
+            // Consultas en paralelo para optimizar velocidad y minimizar conexiones simultáneas
+            const [cRes, hRes, histRes, mRes, bRes, lRes] = await Promise.all([
+                supabase.from('sorteos_configuracion').select('*').eq('id', '00000000-0000-0000-0000-000000000001').single(),
+                supabase.from('sorteos_horarios').select('*').order('orden', { ascending: true }),
+                supabase.from('sorteos_historial').select('*').eq('fecha', currentTodayStr).order('created_at', { ascending: true }),
+                supabase.from('ganadores_mensuales').select('posicion, puntos, usuario_id, usuarios ( id, nickname, nombre_real )').gte('created_at', startIso).lte('created_at', endIso).order('posicion', { ascending: true }),
+                supabase.from('beneficios_cliente').select('texto').limit(1).single(),
+                supabase.from('display_sorteos_layout').select('*').eq('id', SORTEOS_LAYOUT_ID).single()
+            ])
 
-            // 2. Horarios
-            const { data: hData } = await supabase
-                .from('sorteos_horarios')
-                .select('*')
-                .order('orden', { ascending: true })
-            if (hData) setHorarios(hData)
+            if (cRes.data) setConfig(cRes.data)
+            if (hRes.data) setHorarios(hRes.data)
 
-            // 3. Ganadores del día actual (si cambió el día a las 00:00, no habrá registros y se mostrará vacío esperando nuevos ganadores)
-            const { data: histData } = await supabase
-                .from('sorteos_historial')
-                .select('*')
-                .eq('fecha', currentTodayStr)
-                .order('created_at', { ascending: true })
-
+            const histData = histRes.data
             if (histData && histData.length > 0) {
                 const userIds = [...new Set(histData.map(h => h.usuario_id))]
                 const { data: uData } = await supabase
@@ -84,46 +76,22 @@ const GestorSorteosDisplay = ({ onLoaded }) => {
                 setTodayWinners({})
             }
 
-            // 4. Ganadores Mensuales dentro del mes actual en Perú (desde 00:00 del día 1 hasta 23:59:59 del último día del mes)
-            const { data: mData } = await supabase
-                .from('ganadores_mensuales')
-                .select('posicion, puntos, usuario_id, usuarios ( id, nickname, nombre_real )')
-                .gte('created_at', startIso)
-                .lte('created_at', endIso)
-                .order('posicion', { ascending: true })
-
-            if (mData) {
-                setMonthlyWinners(mData)
+            if (mRes.data) {
+                setMonthlyWinners(mRes.data)
             } else {
                 setMonthlyWinners([])
             }
 
-            // 5. Beneficios Cliente (separate try to avoid suppressing other fetches)
-            try {
-                const { data: bData, error: bError } = await supabase
-                    .from('beneficios_cliente')
-                    .select('texto')
-                    .limit(1)
-                    .single()
-                if (!bError && bData) setBeneficioTexto(bData.texto || '')
-            } catch (_) {
-                // no rows yet — ignore
+            if (bRes.data?.texto) {
+                setBeneficioTexto(bRes.data.texto)
             }
 
-            // Layout del panel de sorteos
-            try {
-                const { data: lData, error: lErr } = await supabase
-                    .from('display_sorteos_layout')
-                    .select('*')
-                    .eq('id', SORTEOS_LAYOUT_ID)
-                    .single()
-                if (!lErr && lData) {
-                    const safeY = (lData.pos_y > 500 || lData.pos_y < -500) ? 0 : lData.pos_y
-                    const next = { pos_x: lData.pos_x, pos_y: safeY, scale: lData.scale }
-                    setLayout(next)
-                    try { localStorage.setItem('arcadia_sorteos_layout', JSON.stringify(next)) } catch (_) {}
-                }
-            } catch (_) {}
+            if (lRes.data) {
+                const safeY = (lRes.data.pos_y > 500 || lRes.data.pos_y < -500) ? 0 : lRes.data.pos_y
+                const next = { pos_x: lRes.data.pos_x, pos_y: safeY, scale: lRes.data.scale }
+                setLayout(next)
+                try { localStorage.setItem('arcadia_sorteos_layout', JSON.stringify(next)) } catch (_) {}
+            }
 
         } catch (error) {
             console.error("Error fetching display sorteos:", error)

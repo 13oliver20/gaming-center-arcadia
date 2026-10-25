@@ -22,35 +22,28 @@ const GestorQRsDisplay = ({ onLoaded }) => {
     useEffect(() => {
         const fetchAll = async () => {
             try {
-                // QR config
-                const { data, error } = await supabase.from('configuracion_qrs').select('*')
-                if (error) throw error
+                const [qrRes, lRes] = await Promise.all([
+                    supabase.from('configuracion_qrs').select('*'),
+                    supabase.from('display_qr_layout').select('*').eq('id', LAYOUT_ID).single()
+                ])
 
-                const wifi = data.find(d => d.tipo === 'wifi')
-                const wa = data.find(d => d.tipo === 'whatsapp')
-                const isActiveGlobal = (wifi?.isactive !== false) && (wa?.isactive !== false)
-
-                if (!isActiveGlobal) {
-                    setConfig(null)
-                } else {
-                    setConfig({ wifi, whatsapp: wa })
+                if (qrRes.data) {
+                    const wifi = qrRes.data.find(d => d.tipo === 'wifi')
+                    const wa = qrRes.data.find(d => d.tipo === 'whatsapp')
+                    const isActiveGlobal = (wifi?.isactive !== false) && (wa?.isactive !== false)
+                    if (!isActiveGlobal) {
+                        setConfig(null)
+                    } else {
+                        setConfig({ wifi, whatsapp: wa })
+                    }
                 }
 
-                // Layout config
-                try {
-                    const { data: lData, error: lErr } = await supabase
-                        .from('display_qr_layout')
-                        .select('*')
-                        .eq('id', LAYOUT_ID)
-                        .single()
-                    if (!lErr && lData) {
-                        const safeY = (lData.pos_y > 500 || lData.pos_y < -500) ? 0 : lData.pos_y
-                        const next = { pos_x: lData.pos_x, pos_y: safeY, scale: lData.scale }
-                        setLayout(next)
-                        try { localStorage.setItem('arcadia_qr_layout', JSON.stringify(next)) } catch (_) {}
-                    }
-                } catch (_) {}
-
+                if (lRes.data) {
+                    const safeY = (lRes.data.pos_y > 500 || lRes.data.pos_y < -500) ? 0 : lRes.data.pos_y
+                    const next = { pos_x: lRes.data.pos_x, pos_y: safeY, scale: lRes.data.scale }
+                    setLayout(next)
+                    try { localStorage.setItem('arcadia_qr_layout', JSON.stringify(next)) } catch (_) {}
+                }
             } catch (err) {
                 console.error('Error fetching QR config for display:', err)
             } finally {
