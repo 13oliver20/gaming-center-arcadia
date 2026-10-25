@@ -53,21 +53,14 @@ const DisplayTextWidget = ({ onLoaded }) => {
             })
             .subscribe()
 
-        // Polling de respaldo cada 2s
-        const interval = setInterval(async () => {
-            try {
-                const { data, error } = await supabase
-                    .from('display_text_layout')
-                    .select('*')
-                    .eq('id', TEXT_LAYOUT_ID)
-                    .single()
-                if (!error && data) applyLayout(data)
-            } catch (_) {}
-        }, 2000)
+        // Polling de respaldo cada 5 minutos (o al recuperar foco) para ahorro de cuota Supabase
+        const interval = setInterval(fetchLayout, 5 * 60 * 1000)
+        window.addEventListener('focus', fetchLayout)
 
         return () => {
             supabase.removeChannel(channel)
             clearInterval(interval)
+            window.removeEventListener('focus', fetchLayout)
         }
     }, [])
 

@@ -47,23 +47,14 @@ const DisplayLogoWidget = ({ onLoaded }) => {
             })
             .subscribe()
 
-        // Polling de respaldo cada 2s
-        const interval = setInterval(async () => {
-            try {
-                const { data, error } = await supabase
-                    .from('display_logo_layout')
-                    .select('*')
-                    .eq('id', LOGO_LAYOUT_ID)
-                    .single()
-                if (!error && data) {
-                    setLayout({ pos_x: data.pos_x, pos_y: data.pos_y, scale: data.scale })
-                }
-            } catch (_) {}
-        }, 2000)
+        // Polling de respaldo cada 5 minutos (o al recuperar foco) para ahorro de cuota Supabase
+        const interval = setInterval(fetchLayout, 5 * 60 * 1000)
+        window.addEventListener('focus', fetchLayout)
 
         return () => {
             supabase.removeChannel(channel)
             clearInterval(interval)
+            window.removeEventListener('focus', fetchLayout)
         }
     }, [])
 

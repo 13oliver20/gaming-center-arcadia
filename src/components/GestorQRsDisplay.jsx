@@ -77,8 +77,8 @@ const GestorQRsDisplay = ({ onLoaded }) => {
             })
             .subscribe()
 
-        // Polling de respaldo cada 3s para configuración y layout de QRs
-        const layoutInterval = setInterval(async () => {
+        // Polling de respaldo cada 5 minutos (o al recuperar foco) para ahorro de cuota Supabase
+        const refreshSafe = async () => {
             try {
                 fetchAll()
                 const { data, error } = await supabase
@@ -91,11 +91,15 @@ const GestorQRsDisplay = ({ onLoaded }) => {
                     setLayout({ pos_x: data.pos_x, pos_y: safeY, scale: data.scale })
                 }
             } catch (_) {}
-        }, 3000)
+        }
+
+        const layoutInterval = setInterval(refreshSafe, 5 * 60 * 1000)
+        window.addEventListener('focus', refreshSafe)
 
         return () => {
             supabase.removeChannel(channel)
             clearInterval(layoutInterval)
+            window.removeEventListener('focus', refreshSafe)
         }
     }, [])
 

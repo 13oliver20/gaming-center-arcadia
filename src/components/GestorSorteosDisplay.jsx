@@ -178,13 +178,12 @@ const GestorSorteosDisplay = ({ onLoaded }) => {
             })
             .subscribe()
 
-        // Polling constante cada 3s para sincronización garantizada de sorteos, ganadores y beneficios en tiempo real
+        // Polling de respaldo periódico (o al recuperar foco) para sincronización garantizada
         const syncInterval = setInterval(() => {
             fetchData()
-        }, 3000)
+        }, 3 * 60 * 1000)
 
-        // Polling de respaldo para layout de sorteos
-        const layoutInterval = setInterval(async () => {
+        const fetchSorteosLayout = async () => {
             try {
                 const { data, error } = await supabase
                     .from('display_sorteos_layout')
@@ -196,14 +195,16 @@ const GestorSorteosDisplay = ({ onLoaded }) => {
                     setLayout({ pos_x: data.pos_x, pos_y: safeY, scale: data.scale })
                 }
             } catch (_) {}
-        }, 2000)
+        }
 
-        // Monitoreo constante de cambio de día a las 00:00 (hora Perú GMT-5) para restablecer espacios automáticamente
+        // Polling de respaldo para layout de sorteos cada 5 minutos
+        const layoutInterval = setInterval(fetchSorteosLayout, 5 * 60 * 1000)
+
+        // Monitoreo de cambio de día a las 00:00 (hora Perú GMT-5) cada 60s
         const dateCheckInterval = setInterval(() => {
             const currentStr = getPeruDateStr()
             setTodayInfo(prev => {
                 if (prev.todayStr !== currentStr) {
-                    // El día ha cambiado en Perú: refrescar datos inmediatamente
                     fetchData()
                     return {
                         todayStr: currentStr,
@@ -213,13 +214,20 @@ const GestorSorteosDisplay = ({ onLoaded }) => {
                 }
                 return prev
             })
-        }, 5000)
+        }, 60 * 1000)
+
+        const handleFocus = () => {
+            fetchData()
+            fetchSorteosLayout()
+        }
+        window.addEventListener('focus', handleFocus)
 
         return () => {
             supabase.removeChannel(channel)
             clearInterval(syncInterval)
             clearInterval(layoutInterval)
             clearInterval(dateCheckInterval)
+            window.removeEventListener('focus', handleFocus)
         }
     }, [])
 

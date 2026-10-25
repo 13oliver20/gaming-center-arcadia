@@ -42,10 +42,10 @@ export default function SupabaseStatus() {
         setLastChecked(new Date())
     }, [])
 
-    // Revisión inicial + polling cada 30 segundos
+    // Revisión inicial + polling cada 2 minutos (o al cambiar de estado de red)
     useEffect(() => {
         checkConnection()
-        intervalRef.current = setInterval(checkConnection, 30_000)
+        intervalRef.current = setInterval(checkConnection, 120_000)
 
         // Detecta cuando el navegador recupera/pierde red
         const handleOnline  = () => checkConnection()

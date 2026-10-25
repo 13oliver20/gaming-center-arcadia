@@ -141,11 +141,14 @@ const GestorAnunciosDisplay = () => {
             .on('broadcast', { event: 'anuncios_update' }, () => fetchAnuncios())
             .subscribe()
 
-        const poll = setInterval(fetchAnuncios, 30000)
+        // Polling de respaldo cada 5 minutos (o al recuperar foco) para ahorro de cuota Supabase
+        const poll = setInterval(fetchAnuncios, 5 * 60 * 1000)
+        window.addEventListener('focus', fetchAnuncios)
 
         return () => {
             supabase.removeChannel(channel)
             clearInterval(poll)
+            window.removeEventListener('focus', fetchAnuncios)
         }
     }, [])
 
