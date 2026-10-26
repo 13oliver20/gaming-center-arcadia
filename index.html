@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="es" style="background-color: #05050f;">
 
 <head>
   <meta charset="UTF-8" />
@@ -17,6 +17,12 @@
       // globalThis
       if (typeof globalThis === 'undefined') {
         window.globalThis = window;
+      }
+      // Object.hasOwn
+      if (!Object.hasOwn) {
+        Object.hasOwn = function(obj, prop) {
+          return Object.prototype.hasOwnProperty.call(obj, prop);
+        };
       }
       // String.prototype.replaceAll
       if (!String.prototype.replaceAll) {
@@ -50,11 +56,38 @@
           return JSON.parse(JSON.stringify(obj));
         };
       }
+      // AggregateError
+      if (typeof AggregateError === 'undefined') {
+        window.AggregateError = function(errors, message) {
+          var err = new Error(message || 'AggregateError');
+          err.name = 'AggregateError';
+          err.errors = errors || [];
+          return err;
+        };
+      }
+      // Promise.any
+      if (!Promise.any) {
+        Promise.any = function(promises) {
+          return new Promise(function(resolve, reject) {
+            var errors = [];
+            var count = 0;
+            var arr = Array.from(promises || []);
+            if (arr.length === 0) return reject(new window.AggregateError([], 'All promises were rejected'));
+            arr.forEach(function(p, i) {
+              Promise.resolve(p).then(resolve, function(err) {
+                errors[i] = err;
+                count++;
+                if (count === arr.length) reject(new window.AggregateError(errors, 'All promises were rejected'));
+              });
+            });
+          });
+        };
+      }
     })();
   </script>
 </head>
 
-<body>
+<body style="background-color: #05050f; color: #fff; margin: 0; padding: 0;">
   <div id="root"></div>
   <script type="module" src="/src/main.jsx"></script>
 </body>

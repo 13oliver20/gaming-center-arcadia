@@ -85,8 +85,6 @@ const Display = () => {
             driftY: (Math.random() - 0.5) * 0.12,
         }))
 
-        let tick = 0
-
         const handleMouseMove = (e) => {
             mouse.current = { x: e.clientX, y: e.clientY, nx: 0, ny: 0 }
         }
@@ -105,7 +103,6 @@ const Display = () => {
         const draw = () => {
             ctx.fillStyle = '#05050f'
             ctx.fillRect(0, 0, width, height)
-            tick++
 
             const mx = mouse.current.x
             const my = mouse.current.y
@@ -191,14 +188,14 @@ const Display = () => {
                 {timeFormatted}
             </div>
 
-            <GestorQRsDisplay onLoaded={() => setQrLoaded(true)} />
-            <GestorSorteosDisplay onLoaded={() => setSorteosLoaded(true)} />
+            <GestorQRsDisplay />
+            <GestorSorteosDisplay />
 
             {/* GAMING CENTER ARCADIA - GLOW TEXT EFFECT */}
             <div className="glow-container-wrapper">
-                <DisplayLogoWidget onLoaded={() => setLogoLoaded(true)} />
+                <DisplayLogoWidget />
 
-                <DisplayTextWidget onLoaded={() => setTextLoaded(true)} />
+                <DisplayTextWidget />
 
                 {/* Announcements below the title - inside a 0-height container so they don't push the logo up */}
                 <div style={{ position: 'relative', width: '100%', height: 0, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
