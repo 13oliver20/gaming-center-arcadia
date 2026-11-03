@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
 import './AdminDashboard.css'
@@ -59,8 +59,7 @@ const QUICK_MODULES = [
 export default function AdminDashboard() {
     const [wans, setWans] = useState(DEFAULT_WANS)
     const [loading, setLoading] = useState(true)
-    const [lastSync, setLastSync] = useState(new Date())
-    const [secondsAgo, setSecondsAgo] = useState(0)
+    const [now, setNow] = useState(Date.now())
 
     // Cargar datos iniciales desde Supabase
     const fetchStatus = async () => {
@@ -73,8 +72,6 @@ export default function AdminDashboard() {
 
             if (!error && data && data.length > 0) {
                 setWans(data)
-                setLastSync(new Date())
-                setSecondsAgo(0)
             }
         } catch (err) {
             console.warn('Error fetching mikrotik_status:', err)
@@ -100,18 +97,16 @@ export default function AdminDashboard() {
                         }
                         return [...prev, payload.new]
                     })
-                    setLastSync(new Date())
-                    setSecondsAgo(0)
                 }
             })
             .subscribe()
 
-        // Polling de respaldo cada 10 segundos
-        const poll = setInterval(fetchStatus, 10000)
+        // Polling de respaldo cada 30 segundos (sincronizado con MikroTik y cuota Supabase)
+        const poll = setInterval(fetchStatus, 30000)
 
-        // Contador de segundos transcurridos
+        // Reloj de tiempo actual cada segundo para medir la antigüedad real de la telemetría
         const timer = setInterval(() => {
-            setSecondsAgo(prev => prev + 1)
+            setNow(Date.now())
         }, 1000)
 
         return () => {
@@ -121,6 +116,30 @@ export default function AdminDashboard() {
         }
     }, [])
 
+    // Determinar la fecha real del último reporte enviado por MikroTik
+    const latestMikrotikUpdate = useMemo(() => {
+        const dates = wans
+            .map(w => w.updated_at ? new Date(w.updated_at).getTime() : 0)
+            .filter(t => t > 0)
+        return dates.length > 0 ? new Date(Math.max(...dates)) : null
+    }, [wans])
+
+    // Segundos reales transcurridos desde que MikroTik reportó
+    const secondsAgo = latestMikrotikUpdate 
+        ? Math.max(0, Math.floor((now - latestMikrotikUpdate.getTime()) / 1000)) 
+        : null
+
+    const isStale = secondsAgo === null || secondsAgo > 75 // Más de 75s sin telemetría nueva
+
+    const formatTimeAgo = (sec) => {
+        if (sec === null) return 'Sin datos'
+        if (sec < 60) return `${sec}s`
+        const mins = Math.floor(sec / 60)
+        if (mins < 60) return `${mins}m ${sec % 60}s`
+        const hrs = Math.floor(mins / 60)
+        return `${hrs}h ${mins % 60}m`
+    }
+
     // Cálculos globales
     const totalRx = wans.reduce((acc, w) => acc + (Number(w.rx_mbps) || 0), 0)
     const totalTx = wans.reduce((acc, w) => acc + (Number(w.tx_mbps) || 0), 0)
@@ -129,10 +148,10 @@ export default function AdminDashboard() {
 
     const getLatencyQuality = (ms, isOnline) => {
         if (!isOnline) return { label: 'Sin respuesta', color: '#ff4444' }
-        if (ms === 0) return { label: '< 1 ms (Local / Directo)', color: '#00ff88' }
-        if (ms <= 20) return { label: 'Excelente para Gaming', color: '#00ff88' }
-        if (ms <= 50) return { label: 'Estable para Juegos', color: '#00e5ff' }
-        if (ms <= 90) return { label: 'Moderada / Retardo', color: '#ffaa00' }
+        if (ms === 0) return { label: '< 1 ms / En espera', color: '#888888' }
+        if (ms <= 35) return { label: 'Excelente para Gaming', color: '#00ff88' }
+        if (ms <= 75) return { label: 'Latencia Óptima (Internet)', color: '#00e5ff' }
+        if (ms <= 110) return { label: 'Aceptable / Moderada', color: '#ffaa00' }
         return { label: 'Alta Latencia / Lag', color: '#ff4444' }
     }
 
@@ -146,7 +165,7 @@ export default function AdminDashboard() {
             return { rec, total, loss, lossPct, hasData: true }
         }
         const isOff = estado === 'offline'
-        return { rec: isOff ? 0 : 30, total: 30, loss: isOff ? 30 : 0, lossPct: isOff ? 100 : 0, hasData: false }
+        return { rec: isOff ? 0 : null, total: 30, loss: 0, lossPct: 0, hasData: false }
     }
 
     return (
@@ -155,7 +174,7 @@ export default function AdminDashboard() {
             <div className="noc-header">
                 <div className="noc-header-info">
                     <div className="noc-title-row">
-                        <span className="noc-pulse-dot" />
+                        <span className="noc-pulse-dot" style={{ background: isStale ? '#ffaa00' : '#00ff88' }} />
                         <h1 className="noc-title">MONITOREO DE RED MIKROTIK</h1>
                         <span className="noc-badge-model">MikroTik hEX · RouterOS v6.49</span>
                     </div>
@@ -165,8 +184,14 @@ export default function AdminDashboard() {
                 </div>
 
                 <div className="noc-sync-info">
-                    <span className="noc-sync-text">
-                        Última lectura: <strong>hace {secondsAgo}s</strong> ({lastSync.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', second: '2-digit' })})
+                    <span className="noc-sync-text" style={{ color: isStale ? '#ffaa00' : 'rgba(255,255,255,0.85)' }}>
+                        {isStale ? '⚠️ Sin telemetría reciente: ' : '🟢 Telemetría en vivo: '}
+                        <strong>hace {formatTimeAgo(secondsAgo)}</strong>
+                        {latestMikrotikUpdate && (
+                            <span style={{ opacity: 0.65, marginLeft: '4px' }}>
+                                ({latestMikrotikUpdate.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', second: '2-digit' })})
+                            </span>
+                        )}
                     </span>
                     <button 
                         className="noc-btn-refresh" 
@@ -354,20 +379,35 @@ export default function AdminDashboard() {
                                 {/* Footer de la tarjeta con Paquetes y Estado */}
                                 <div className="nwc-footer">
                                     <div className="nwc-packets-info" style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
-                                        <span className="nwc-packets-badge" style={{
-                                            background: pkts.loss === 0 ? 'rgba(0, 255, 136, 0.12)' : pkts.loss < 5 ? 'rgba(255, 214, 0, 0.12)' : 'rgba(255, 68, 68, 0.15)',
-                                            color: pkts.loss === 0 ? '#00ff88' : pkts.loss < 5 ? '#ffd600' : '#ff4444',
-                                            border: `1px solid ${pkts.loss === 0 ? 'rgba(0, 255, 136, 0.3)' : pkts.loss < 5 ? 'rgba(255, 214, 0, 0.3)' : 'rgba(255, 68, 68, 0.4)'}`,
-                                            padding: '2px 8px',
-                                            borderRadius: '6px',
-                                            fontSize: '0.72rem',
-                                            fontWeight: 700
-                                        }}>
-                                            📦 Paquetes: {pkts.rec}/{pkts.total} ({100 - pkts.lossPct}% entrega)
-                                        </span>
-                                        {pkts.loss > 0 && (
-                                            <span style={{ color: '#ffaa00', fontSize: '0.7rem' }}>
-                                                ({pkts.loss} perdidos · {pkts.lossPct}% pérdida)
+                                        {pkts.hasData ? (
+                                            <>
+                                                <span className="nwc-packets-badge" style={{
+                                                    background: pkts.loss === 0 ? 'rgba(0, 255, 136, 0.12)' : pkts.loss < 5 ? 'rgba(255, 214, 0, 0.12)' : 'rgba(255, 68, 68, 0.15)',
+                                                    color: pkts.loss === 0 ? '#00ff88' : pkts.loss < 5 ? '#ffd600' : '#ff4444',
+                                                    border: `1px solid ${pkts.loss === 0 ? 'rgba(0, 255, 136, 0.3)' : pkts.loss < 5 ? 'rgba(255, 214, 0, 0.3)' : 'rgba(255, 68, 68, 0.4)'}`,
+                                                    padding: '2px 8px',
+                                                    borderRadius: '6px',
+                                                    fontSize: '0.72rem',
+                                                    fontWeight: 700
+                                                }}>
+                                                    📦 Paquetes: {pkts.rec}/{pkts.total} ({100 - pkts.lossPct}% entrega)
+                                                </span>
+                                                {pkts.loss > 0 && (
+                                                    <span style={{ color: '#ffaa00', fontSize: '0.7rem' }}>
+                                                        ({pkts.loss} perdidos · {pkts.lossPct}% pérdida)
+                                                    </span>
+                                                )}
+                                            </>
+                                        ) : (
+                                            <span className="nwc-packets-badge" style={{
+                                                background: 'rgba(255, 255, 255, 0.06)',
+                                                color: 'rgba(255, 255, 255, 0.7)',
+                                                border: '1px solid rgba(255, 255, 255, 0.15)',
+                                                padding: '2px 8px',
+                                                borderRadius: '6px',
+                                                fontSize: '0.72rem'
+                                            }}>
+                                                ⏳ Esperando ciclo de 30 paquetes
                                             </span>
                                         )}
                                     </div>
