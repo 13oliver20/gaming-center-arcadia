@@ -1,6 +1,7 @@
 import React from 'react'
 import HamburgerMenu from '../components/HamburgerMenu'
 import SupabaseStatus from '../components/SupabaseStatus'
+import AdminDashboard from '../components/AdminDashboard'
 import './Admin.css'
 
 const Admin = ({ children }) => {
@@ -24,7 +25,7 @@ const Admin = ({ children }) => {
 
             {/* Page content rendered here */}
             <main className="admin-content">
-                {children}
+                {children || <AdminDashboard />}
             </main>
         </div>
     )

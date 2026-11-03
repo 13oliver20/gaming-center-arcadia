@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import './HamburgerMenu.css'
 
 const menuItems = [
+    { icon: '📊', label: 'Dashboard & Red MikroTik', to: '/admin' },
     { icon: '👥', label: 'Gestión de Usuarios', to: '/admin/usuarios' },
     { icon: '📲', label: 'Gestor de QRs', to: '/admin/qrs' },
     { icon: '🎰', label: 'Gestor de Sorteos Diarios', to: '/admin/sorteos' },
