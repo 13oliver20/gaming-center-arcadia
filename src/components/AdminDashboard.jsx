@@ -60,6 +60,7 @@ export default function AdminDashboard() {
     const [wans, setWans] = useState(DEFAULT_WANS)
     const [loading, setLoading] = useState(true)
     const [now, setNow] = useState(Date.now())
+    const [lastRealtimeAt, setLastRealtimeAt] = useState(null)
 
     // Cargar datos iniciales desde Supabase
     const fetchStatus = async () => {
@@ -88,6 +89,7 @@ export default function AdminDashboard() {
             .channel('mikrotik-realtime-channel')
             .on('postgres_changes', { event: '*', schema: 'public', table: 'mikrotik_status' }, (payload) => {
                 if (payload.new) {
+                    setLastRealtimeAt(Date.now())
                     setWans(prev => {
                         const idx = prev.findIndex(w => w.id === payload.new.id)
                         if (idx >= 0) {
@@ -118,11 +120,12 @@ export default function AdminDashboard() {
 
     // Determinar la fecha real del último reporte enviado por MikroTik
     const latestMikrotikUpdate = useMemo(() => {
+        if (lastRealtimeAt) return new Date(lastRealtimeAt)
         const dates = wans
             .map(w => w.updated_at ? new Date(w.updated_at).getTime() : 0)
             .filter(t => t > 0)
         return dates.length > 0 ? new Date(Math.max(...dates)) : null
-    }, [wans])
+    }, [wans, lastRealtimeAt])
 
     // Segundos reales transcurridos desde que MikroTik reportó
     const secondsAgo = latestMikrotikUpdate 
@@ -277,12 +280,14 @@ export default function AdminDashboard() {
                 <div className="noc-wans-grid">
                     {wans.map((wan, idx) => {
                         const pkts = parsePacketStats(wan.estado)
-                        const isOffline = wan.estado === 'offline' || pkts.rec === 0
+                        const latMs = Number(wan.latencia_ms) || 0
+                        const hasLatency = latMs > 0
+                        const isOffline = wan.estado === 'offline' || (pkts.hasData && pkts.rec === 0 && !hasLatency)
                         const isOnline = !isOffline
                         const rx = Number(wan.rx_mbps) || 0
                         const tx = Number(wan.tx_mbps) || 0
                         const isResolving = isOnline && (rx > 0.05 || tx > 0.05)
-                        const latInfo = getLatencyQuality(Number(wan.latencia_ms) || 0, isOnline)
+                        const latInfo = getLatencyQuality(latMs, isOnline || hasLatency)
                         // Porcentaje respecto a 500 Mbps contratados por línea
                         const rxPercent = Math.min(100, Math.round((rx / 500) * 100))
                         const txPercent = Math.min(100, Math.round((tx / 500) * 100))
@@ -326,7 +331,7 @@ export default function AdminDashboard() {
                                         </div>
                                         <div className="nwc-latency-display">
                                             <span className="nwc-latency-num" style={{ color: latInfo.color }}>
-                                                {!isOnline ? '--' : wan.latencia_ms}
+                                                {!isOnline && !hasLatency ? '--' : wan.latencia_ms}
                                             </span>
                                             <span className="nwc-latency-unit">ms</span>
                                         </div>
