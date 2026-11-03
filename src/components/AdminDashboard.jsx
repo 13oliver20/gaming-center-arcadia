@@ -9,6 +9,7 @@ const DEFAULT_WANS = [
         nombre: 'WAN 1: Movistar 500M',
         interfaz: 'ether1',
         gateway: '192.168.10.1',
+        target_dns: '8.8.8.8 (Google)',
         estado: 'online',
         latencia_ms: 12,
         rx_mbps: 24.5,
@@ -21,6 +22,7 @@ const DEFAULT_WANS = [
         nombre: 'WAN 2: Movistar 500M',
         interfaz: 'ether2',
         gateway: '192.168.20.1',
+        target_dns: '1.1.1.1 (Cloudflare)',
         estado: 'online',
         latencia_ms: 15,
         rx_mbps: 5.1,
@@ -33,6 +35,7 @@ const DEFAULT_WANS = [
         nombre: 'WAN 3: Movistar 500M',
         interfaz: 'ether3',
         gateway: '192.168.30.1',
+        target_dns: '9.9.9.9 (Quad9)',
         estado: 'online',
         latencia_ms: 13,
         rx_mbps: 31.8,
@@ -255,7 +258,9 @@ export default function AdminDashboard() {
                                             {wan.interfaz}
                                         </div>
                                         <h3 className="nwc-name">{wan.nombre}</h3>
-                                        <span className="nwc-gateway">Gateway: {wan.gateway}</span>
+                                        <span className="nwc-gateway">
+                                            Gateway: {wan.gateway} · Ping DNS: <strong style={{ color: '#00e5ff' }}>{wan.target_dns || (idx === 0 ? '8.8.8.8 (Google)' : idx === 1 ? '1.1.1.1 (Cloudflare)' : '9.9.9.9 (Quad9)')}</strong>
+                                        </span>
                                     </div>
 
                                     <div className="nwc-status-badge-wrap">
