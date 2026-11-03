@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
 import './AdminDashboard.css'
 
+// Interfaces WAN fijas de Gaming Center Arcadia
 const DEFAULT_WANS = [
     {
         id: 'wan1',
@@ -11,7 +12,7 @@ const DEFAULT_WANS = [
         gateway: '192.168.10.1',
         target_dns: '200.48.225.146 (DNS Movistar)',
         estado: 'online',
-        latencia_ms: 12,
+        latencia_ms: 13,
         rx_mbps: 24.5,
         tx_mbps: 3.2,
         resolviendo: true,
@@ -24,7 +25,7 @@ const DEFAULT_WANS = [
         gateway: '192.168.20.1',
         target_dns: '200.48.225.146 (DNS Movistar)',
         estado: 'online',
-        latencia_ms: 15,
+        latencia_ms: 14,
         rx_mbps: 5.1,
         tx_mbps: 0.9,
         resolviendo: true,
@@ -37,13 +38,50 @@ const DEFAULT_WANS = [
         gateway: '192.168.30.1',
         target_dns: '200.48.225.146 (DNS Movistar)',
         estado: 'online',
-        latencia_ms: 13,
+        latencia_ms: 6,
         rx_mbps: 31.8,
         tx_mbps: 4.6,
         resolviendo: true,
         updated_at: new Date().toISOString()
     }
 ]
+
+// Estado inicial de salud del MikroTik
+const DEFAULT_HEALTH = {
+    id: 'system',
+    cpu_load: 14,
+    free_memory_mb: 214,
+    total_memory_mb: 256,
+    memory_pct: 16,
+    uptime: '1d 06:15:00',
+    cpu_frequency: 880,
+    board_name: 'hEX (RB750Gr3)',
+    version: 'RouterOS v6.49',
+    updated_at: new Date().toISOString()
+}
+
+// Generador de 40 PCs por defecto (192.168.1.101 al 192.168.1.140)
+const GENERATE_DEFAULT_CLIENTS = () => {
+    return Array.from({ length: 40 }, (_, idx) => {
+        const num = idx + 1
+        const ip = `192.168.1.${100 + num}`
+        // Semillero realista inicial para ver el mapa de piso mientras el MikroTik sincroniza
+        const isOnline = num <= 24 // 24 encendidas
+        const isGaming = isOnline && (num % 2 === 1) // Impares en juego
+        const isHeavy = num === 7 // PC-07 descargando fuerte
+        return {
+            ip,
+            pc_name: `PC-${String(num).padStart(2, '0')}`,
+            pc_number: num,
+            online: isOnline,
+            rx_kbps: isHeavy ? 48500 : isGaming ? Math.floor(Math.random() * 4000 + 1500) : isOnline ? Math.floor(Math.random() * 8000 + 800) : 0,
+            tx_kbps: isGaming ? Math.floor(Math.random() * 1200 + 400) : isOnline ? Math.floor(Math.random() * 500 + 100) : 0,
+            wan_active: !isOnline ? 'idle' : isGaming ? 'wan3_gaming' : (num % 4 === 0 ? 'wan2_nav' : 'wan1_nav'),
+            actividad: !isOnline ? 'apagada' : isHeavy ? 'descarga' : isGaming ? 'gaming' : 'navegacion',
+            updated_at: new Date().toISOString()
+        }
+    })
+}
 
 const QUICK_MODULES = [
     { to: '/admin/usuarios', icon: '👥', label: 'Gestión de Usuarios', desc: 'Buscador @user, Excel y puntos' },
@@ -58,6 +96,10 @@ const QUICK_MODULES = [
 
 export default function AdminDashboard() {
     const [wans, setWans] = useState(DEFAULT_WANS)
+    const [health, setHealth] = useState(DEFAULT_HEALTH)
+    const [clients, setClients] = useState(GENERATE_DEFAULT_CLIENTS)
+    const [clientFilter, setClientFilter] = useState('all') // 'all', 'gaming', 'nav', 'heavy', 'offline'
+    const [selectedPc, setSelectedPc] = useState(null)
     const [loading, setLoading] = useState(true)
     const [now, setNow] = useState(Date.now())
     const [lastRealtimeAt, setLastRealtimeAt] = useState(null)
@@ -66,16 +108,39 @@ export default function AdminDashboard() {
     const fetchStatus = async () => {
         try {
             if (!supabase) return
-            const { data, error } = await supabase
+            
+            // 1. Cargar WANs
+            const { data: wanData } = await supabase
                 .from('mikrotik_status')
                 .select('*')
                 .order('id', { ascending: true })
+            if (wanData && wanData.length > 0) setWans(wanData)
 
-            if (!error && data && data.length > 0) {
-                setWans(data)
+            // 2. Cargar Salud del MikroTik
+            const { data: healthData } = await supabase
+                .from('mikrotik_health')
+                .select('*')
+                .eq('id', 'system')
+                .single()
+            if (healthData) setHealth(healthData)
+
+            // 3. Cargar las 40 PCs clientes
+            const { data: clientData } = await supabase
+                .from('mikrotik_clients')
+                .select('*')
+                .order('pc_number', { ascending: true })
+            if (clientData && clientData.length > 0) {
+                setClients(prev => {
+                    const merged = [...prev]
+                    clientData.forEach(c => {
+                        const idx = merged.findIndex(p => p.ip === c.ip || p.pc_number === c.pc_number)
+                        if (idx >= 0) merged[idx] = { ...merged[idx], ...c }
+                    })
+                    return merged
+                })
             }
         } catch (err) {
-            console.warn('Error fetching mikrotik_status:', err)
+            console.warn('Error fetching telemetry:', err)
         } finally {
             setLoading(false)
         }
@@ -84,9 +149,9 @@ export default function AdminDashboard() {
     useEffect(() => {
         fetchStatus()
 
-        // Suscripción Realtime en Supabase
-        const channel = supabase
-            .channel('mikrotik-realtime-channel')
+        // 1. Suscripción Realtime para WANs
+        const chWans = supabase
+            .channel('mikrotik-realtime-wans')
             .on('postgres_changes', { event: '*', schema: 'public', table: 'mikrotik_status' }, (payload) => {
                 if (payload.new) {
                     setLastRealtimeAt(Date.now())
@@ -103,16 +168,46 @@ export default function AdminDashboard() {
             })
             .subscribe()
 
-        // Polling de respaldo cada 30 segundos (sincronizado con MikroTik y cuota Supabase)
+        // 2. Suscripción Realtime para Salud del Router
+        const chHealth = supabase
+            .channel('mikrotik-realtime-health')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'mikrotik_health' }, (payload) => {
+                if (payload.new) {
+                    setHealth(payload.new)
+                }
+            })
+            .subscribe()
+
+        // 3. Suscripción Realtime para las 40 PCs Clientes
+        const chClients = supabase
+            .channel('mikrotik-realtime-clients')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'mikrotik_clients' }, (payload) => {
+                if (payload.new) {
+                    setClients(prev => {
+                        const idx = prev.findIndex(c => c.ip === payload.new.ip || c.pc_number === payload.new.pc_number)
+                        if (idx >= 0) {
+                            const updated = [...prev]
+                            updated[idx] = { ...updated[idx], ...payload.new }
+                            return updated
+                        }
+                        return [...prev, payload.new]
+                    })
+                }
+            })
+            .subscribe()
+
+        // Polling de respaldo cada 30 segundos
         const poll = setInterval(fetchStatus, 30000)
 
-        // Reloj de tiempo actual cada segundo para medir la antigüedad real de la telemetría
+        // Reloj cada segundo para medir la antigüedad real de la telemetría
         const timer = setInterval(() => {
             setNow(Date.now())
         }, 1000)
 
         return () => {
-            supabase.removeChannel(channel)
+            supabase.removeChannel(chWans)
+            supabase.removeChannel(chHealth)
+            supabase.removeChannel(chClients)
             clearInterval(poll)
             clearInterval(timer)
         }
@@ -127,12 +222,11 @@ export default function AdminDashboard() {
         return dates.length > 0 ? new Date(Math.max(...dates)) : null
     }, [wans, lastRealtimeAt])
 
-    // Segundos reales transcurridos desde que MikroTik reportó
     const secondsAgo = latestMikrotikUpdate 
         ? Math.max(0, Math.floor((now - latestMikrotikUpdate.getTime()) / 1000)) 
         : null
 
-    const isStale = secondsAgo === null || secondsAgo > 75 // Más de 75s sin telemetría nueva
+    const isStale = secondsAgo === null || secondsAgo > 75
 
     const formatTimeAgo = (sec) => {
         if (sec === null) return 'Sin datos'
@@ -143,18 +237,41 @@ export default function AdminDashboard() {
         return `${hrs}h ${mins % 60}m`
     }
 
-    // Cálculos globales
+    // Cálculos globales WANs
     const totalRx = wans.reduce((acc, w) => acc + (Number(w.rx_mbps) || 0), 0)
     const totalTx = wans.reduce((acc, w) => acc + (Number(w.tx_mbps) || 0), 0)
     const onlineCount = wans.filter(w => w.estado !== 'offline').length
     const resolvingCount = wans.filter(w => w.estado !== 'offline' && (Number(w.rx_mbps) > 0.05 || Number(w.tx_mbps) > 0.05)).length
 
+    // Cálculos de clientes (40 PCs)
+    const onlineClients = clients.filter(c => c.online)
+    const gamingClients = clients.filter(c => c.online && (c.wan_active === 'wan3_gaming' || c.actividad === 'gaming'))
+    const navClients = clients.filter(c => c.online && (c.wan_active === 'wan1_nav' || c.wan_active === 'wan2_nav' || c.actividad === 'navegacion'))
+    const heavyClients = clients.filter(c => c.online && (Number(c.rx_kbps) > 25000 || c.actividad === 'descarga'))
+    const offlineClients = clients.filter(c => !c.online)
+
+    // Top consumidor de ancho de banda
+    const topConsumer = useMemo(() => {
+        const sorted = [...clients].filter(c => c.online).sort((a, b) => (Number(b.rx_kbps) || 0) - (Number(a.rx_kbps) || 0))
+        if (sorted.length > 0 && Number(sorted[0].rx_kbps) > 5000) return sorted[0]
+        return null
+    }, [clients])
+
+    // Lista de PCs filtrada
+    const filteredClients = useMemo(() => {
+        if (clientFilter === 'gaming') return gamingClients
+        if (clientFilter === 'nav') return navClients
+        if (clientFilter === 'heavy') return heavyClients
+        if (clientFilter === 'offline') return offlineClients
+        return clients
+    }, [clients, clientFilter, gamingClients, navClients, heavyClients, offlineClients])
+
     const getLatencyQuality = (ms, isOnline) => {
         if (!isOnline) return { label: 'Sin respuesta', color: '#ff4444' }
         if (ms === 0) return { label: '< 1 ms / En espera', color: '#888888' }
-        if (ms <= 35) return { label: 'Excelente para Gaming', color: '#00ff88' }
-        if (ms <= 75) return { label: 'Latencia Óptima (Internet)', color: '#00e5ff' }
-        if (ms <= 110) return { label: 'Aceptable / Moderada', color: '#ffaa00' }
+        if (ms <= 20) return { label: 'Excelente Gaming (Nacional)', color: '#00ff88' }
+        if (ms <= 45) return { label: 'Latencia Óptima (DNS)', color: '#00e5ff' }
+        if (ms <= 80) return { label: 'Aceptable / Moderada', color: '#ffaa00' }
         return { label: 'Alta Latencia / Lag', color: '#ff4444' }
     }
 
@@ -178,11 +295,14 @@ export default function AdminDashboard() {
                 <div className="noc-header-info">
                     <div className="noc-title-row">
                         <span className="noc-pulse-dot" style={{ background: isStale ? '#ffaa00' : '#00ff88' }} />
-                        <h1 className="noc-title">MONITOREO DE RED MIKROTIK</h1>
+                        <h1 className="noc-title">CENTRO DE OPERACIONES DE RED (NOC)</h1>
                         <span className="noc-badge-model">MikroTik hEX · RouterOS v6.49</span>
+                        <span className="noc-badge-model" style={{ borderColor: 'rgba(180, 80, 255, 0.4)', color: '#d18aff' }}>
+                            40 Puestos LAN
+                        </span>
                     </div>
                     <p className="noc-subtitle">
-                        Estado y telemetría de las 3 conexiones de fibra óptica de Gaming Center Arcadia
+                        Monitoreo en vivo de las 3 conexiones WAN de fibra óptica, salud del hardware y mapa de 40 PCs de Gaming Center Arcadia
                     </p>
                 </div>
 
@@ -214,7 +334,7 @@ export default function AdminDashboard() {
                         ⚡
                     </div>
                     <div className="ngc-body">
-                        <span className="ngc-label">LÍNEAS ACTIVAS</span>
+                        <span className="ngc-label">LÍNEAS WAN ACTIVAS</span>
                         <div className="ngc-val-row">
                             <span className="ngc-val" style={{ color: onlineCount === 3 ? '#00ff88' : '#ffaa00' }}>
                                 {onlineCount} / {wans.length}
@@ -256,21 +376,110 @@ export default function AdminDashboard() {
 
                 <div className="noc-global-card">
                     <div className="ngc-icon-wrap" style={{ color: '#ffd600', borderColor: 'rgba(255, 214, 0, 0.3)' }}>
-                        🛡️
+                        🎮
                     </div>
                     <div className="ngc-body">
-                        <span className="ngc-label">RESOLVIENDO TRÁFICO</span>
+                        <span className="ngc-label">PCS EN JUEGO (WAN 3)</span>
                         <div className="ngc-val-row">
-                            <span className="ngc-val" style={{ color: resolvingCount === 3 ? '#00ff88' : '#ffaa00' }}>
-                                {resolvingCount} de 3
+                            <span className="ngc-val" style={{ color: '#00ff88' }}>
+                                {gamingClients.length} <small>/ 40</small>
                             </span>
-                            <span className="ngc-sub">Enrutando paquetes</span>
+                            <span className="ngc-sub">{onlineClients.length} PCs encendidas</span>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* SECCIÓN DE LAS 3 LÍNEAS WAN */}
+            {/* SECCIÓN 1: SALUD Y DIAGNÓSTICO DEL MIKROTIK hEX */}
+            <div className="noc-health-section">
+                <div className="noc-section-title-wrap">
+                    <h2 className="noc-section-title">🏥 SALUD DEL ROUTER MIKROTIK</h2>
+                    <span className="noc-section-badge">Hardware: Dual-Core 880MHz · 256MB RAM</span>
+                </div>
+
+                <div className="noc-health-grid">
+                    {/* CPU Load */}
+                    <div className="nhc-card">
+                        <div className="nhc-head">
+                            <span className="nhc-icon">⚙️</span>
+                            <span className="nhc-title">USO DE CPU</span>
+                            <span className="nhc-badge" style={{
+                                color: (health.cpu_load || 0) > 80 ? '#ff4444' : (health.cpu_load || 0) > 50 ? '#ffaa00' : '#00ff88'
+                            }}>
+                                {(health.cpu_load || 0) < 50 ? '● Normal' : '● Carga Alta'}
+                            </span>
+                        </div>
+                        <div className="nhc-val-row">
+                            <span className="nhc-big-num" style={{
+                                color: (health.cpu_load || 0) > 80 ? '#ff4444' : (health.cpu_load || 0) > 50 ? '#ffaa00' : '#00ff88'
+                            }}>
+                                {health.cpu_load || 0}%
+                            </span>
+                            <span className="nhc-sub-text">Frecuencia: {health.cpu_frequency || 880} MHz</span>
+                        </div>
+                        <div className="nhc-bar-track">
+                            <div 
+                                className="nhc-bar-fill"
+                                style={{ 
+                                    width: `${Math.min(100, Math.max(5, health.cpu_load || 0))}%`,
+                                    background: (health.cpu_load || 0) > 80 ? '#ff4444' : (health.cpu_load || 0) > 50 ? '#ffaa00' : 'linear-gradient(90deg, #00ff88, #00e5ff)'
+                                }}
+                            />
+                        </div>
+                    </div>
+
+                    {/* Memoria RAM */}
+                    <div className="nhc-card">
+                        <div className="nhc-head">
+                            <span className="nhc-icon">🧠</span>
+                            <span className="nhc-title">MEMORIA RAM</span>
+                            <span className="nhc-badge" style={{ color: '#00e5ff' }}>
+                                Total: {health.total_memory_mb || 256} MB
+                            </span>
+                        </div>
+                        <div className="nhc-val-row">
+                            <span className="nhc-big-num" style={{ color: '#00e5ff' }}>
+                                {health.free_memory_mb || 214} <small>MB libre</small>
+                            </span>
+                            <span className="nhc-sub-text">
+                                {Math.round(health.memory_pct || 16)}% en uso ({Math.round((health.total_memory_mb || 256) - (health.free_memory_mb || 214))} MB usados)
+                            </span>
+                        </div>
+                        <div className="nhc-bar-track">
+                            <div 
+                                className="nhc-bar-fill"
+                                style={{ 
+                                    width: `${Math.min(100, Math.max(5, health.memory_pct || 16))}%`,
+                                    background: 'linear-gradient(90deg, #00e5ff, #b450ff)'
+                                }}
+                            />
+                        </div>
+                    </div>
+
+                    {/* Uptime y Sistema */}
+                    <div className="nhc-card">
+                        <div className="nhc-head">
+                            <span className="nhc-icon">⏱️</span>
+                            <span className="nhc-title">TIEMPO ACTIVO (UPTIME)</span>
+                            <span className="nhc-badge" style={{ color: '#00ff88' }}>
+                                ● En Línea
+                            </span>
+                        </div>
+                        <div className="nhc-val-row">
+                            <span className="nhc-big-num" style={{ color: '#fff', fontSize: '1.25rem' }}>
+                                {health.uptime || '1d 06:15:00'}
+                            </span>
+                            <span className="nhc-sub-text">Sin reinicios ni caídas</span>
+                        </div>
+                        <div className="nhc-specs-row">
+                            <span>Modelo: <strong>{health.board_name || 'hEX'}</strong></span>
+                            <span>SO: <strong>{health.version || 'v6.49'}</strong></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* SECCIÓN 2: DETALLE POR LÍNEA WAN */}
             <div className="noc-wans-section">
                 <div className="noc-section-title-wrap">
                     <h2 className="noc-section-title">DETALLE POR LÍNEA WAN</h2>
@@ -288,14 +497,12 @@ export default function AdminDashboard() {
                         const tx = Number(wan.tx_mbps) || 0
                         const isResolving = isOnline && (rx > 0.05 || tx > 0.05)
                         const latInfo = getLatencyQuality(latMs, isOnline || hasLatency)
-                        // Porcentaje respecto a 500 Mbps contratados por línea
                         const rxPercent = Math.min(100, Math.round((rx / 500) * 100))
                         const txPercent = Math.min(100, Math.round((tx / 500) * 100))
                         const dnsTarget = wan.target_dns || '200.48.225.146 (DNS Movistar)'
 
                         return (
                             <div key={wan.id || idx} className={`noc-wan-card ${isOnline ? 'card-online' : 'card-offline'}`}>
-                                {/* Header Tarjeta */}
                                 <div className="nwc-header">
                                     <div className="nwc-title-block">
                                         <div className="nwc-linea-badge">
@@ -321,9 +528,7 @@ export default function AdminDashboard() {
                                     </div>
                                 </div>
 
-                                {/* Métricas Principales */}
                                 <div className="nwc-metrics-body">
-                                    {/* Latencia MS & Paquetes */}
                                     <div className="nwc-metric-item nwc-latency-box">
                                         <div className="nwc-metric-head">
                                             <span className="nwc-m-icon">⚡</span>
@@ -343,9 +548,7 @@ export default function AdminDashboard() {
                                         </span>
                                     </div>
 
-                                    {/* Velocímetro Tráfico RX / TX */}
                                     <div className="nwc-traffic-bars">
-                                        {/* Descarga RX */}
                                         <div className="nwc-bar-group">
                                             <div className="nwc-bar-label-row">
                                                 <span className="nwc-bar-title">⬇️ Descarga (RX)</span>
@@ -362,7 +565,6 @@ export default function AdminDashboard() {
                                             <span className="nwc-bar-sub">{rxPercent}% de 500M de descarga en uso</span>
                                         </div>
 
-                                        {/* Subida TX */}
                                         <div className="nwc-bar-group">
                                             <div className="nwc-bar-label-row">
                                                 <span className="nwc-bar-title">⬆️ Subida (TX)</span>
@@ -381,7 +583,6 @@ export default function AdminDashboard() {
                                     </div>
                                 </div>
 
-                                {/* Footer de la tarjeta con Paquetes y Estado */}
                                 <div className="nwc-footer">
                                     <div className="nwc-packets-info" style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
                                         {pkts.hasData ? (
@@ -431,7 +632,216 @@ export default function AdminDashboard() {
                 </div>
             </div>
 
-            {/* ACCESOS RÁPIDOS A MÓDULOS DEL SISTEMA */}
+            {/* SECCIÓN 3: MAPA DE PISO - 40 COMPUTADORAS CLIENTE */}
+            <div className="noc-floor-section">
+                <div className="noc-section-title-wrap">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <h2 className="noc-section-title">🗺️ MAPA DE PISO: 40 PCs CLIENTES</h2>
+                        <span className="noc-section-badge" style={{ borderColor: 'rgba(0, 255, 136, 0.3)', color: '#00ff88' }}>
+                            Rango: 192.168.1.101 – 192.168.1.140
+                        </span>
+                    </div>
+                    <span className="noc-section-badge">
+                        WAN 3: Gaming · WAN 1 y 2: Navegación
+                    </span>
+                </div>
+
+                {/* Banner Alerta de Ladrón de Ancho de Banda */}
+                {topConsumer && (
+                    <div className="noc-top-hogger-banner">
+                        <span className="nth-icon">🔥</span>
+                        <div className="nth-text">
+                            <strong>Mayor Consumo Detectado:</strong> {topConsumer.pc_name} ({topConsumer.ip}) está consumiendo{' '}
+                            <span style={{ color: '#ffd600', fontWeight: 800 }}>
+                                {(Number(topConsumer.rx_kbps) / 1000).toFixed(1)} Mbps
+                            </span>{' '}
+                            en {topConsumer.wan_active === 'wan3_gaming' ? 'WAN 3 (Juegos)' : 'WAN 1/2 (Navegación)'}.
+                        </div>
+                        <button className="nth-btn" onClick={() => setSelectedPc(topConsumer)}>
+                            Inspeccionar PC
+                        </button>
+                    </div>
+                )}
+
+                {/* Barra de Filtros y Estadísticas de Piso */}
+                <div className="noc-floor-controls">
+                    <div className="nfc-stats-pills">
+                        <span className="nfc-stat-item">
+                            Total: <strong>40</strong>
+                        </span>
+                        <span className="nfc-stat-item" style={{ color: '#00ff88' }}>
+                            ● {onlineClients.length} Encendidas
+                        </span>
+                        <span className="nfc-stat-item" style={{ color: '#d18aff' }}>
+                            🎮 {gamingClients.length} En Juego (WAN 3)
+                        </span>
+                        <span className="nfc-stat-item" style={{ color: '#00e5ff' }}>
+                            🌐 {navClients.length} Navegando (WAN 1/2)
+                        </span>
+                        <span className="nfc-stat-item" style={{ color: '#888' }}>
+                            ⚫ {offlineClients.length} Libres/Off
+                        </span>
+                    </div>
+
+                    <div className="nfc-filter-tabs">
+                        <button 
+                            className={`nfc-tab ${clientFilter === 'all' ? 'tab-active' : ''}`}
+                            onClick={() => setClientFilter('all')}
+                        >
+                            Todas (40)
+                        </button>
+                        <button 
+                            className={`nfc-tab ${clientFilter === 'gaming' ? 'tab-active' : ''}`}
+                            onClick={() => setClientFilter('gaming')}
+                        >
+                            🎮 Gaming ({gamingClients.length})
+                        </button>
+                        <button 
+                            className={`nfc-tab ${clientFilter === 'nav' ? 'tab-active' : ''}`}
+                            onClick={() => setClientFilter('nav')}
+                        >
+                            🌐 Navegando ({navClients.length})
+                        </button>
+                        <button 
+                            className={`nfc-tab ${clientFilter === 'heavy' ? 'tab-active' : ''}`}
+                            onClick={() => setClientFilter('heavy')}
+                        >
+                            ⚡ Alto Tráfico ({heavyClients.length})
+                        </button>
+                        <button 
+                            className={`nfc-tab ${clientFilter === 'offline' ? 'tab-active' : ''}`}
+                            onClick={() => setClientFilter('offline')}
+                        >
+                            ⚫ Apagadas ({offlineClients.length})
+                        </button>
+                    </div>
+                </div>
+
+                {/* Grilla Visual de las 40 PCs */}
+                <div className="noc-pcs-grid">
+                    {filteredClients.map(pc => {
+                        const rxMbps = (Number(pc.rx_kbps || 0) / 1000).toFixed(1)
+                        const txMbps = (Number(pc.tx_kbps || 0) / 1000).toFixed(1)
+                        const isGaming = pc.online && (pc.wan_active === 'wan3_gaming' || pc.actividad === 'gaming')
+                        const isHeavy = pc.online && Number(pc.rx_kbps) > 25000
+                        const isNav = pc.online && !isGaming && !isHeavy
+
+                        return (
+                            <div 
+                                key={pc.ip}
+                                className={`npc-card ${pc.online ? 'npc-online' : 'npc-offline'} ${isGaming ? 'npc-gaming' : ''} ${isHeavy ? 'npc-heavy' : ''}`}
+                                onClick={() => setSelectedPc(pc)}
+                                title={`Clic para ver detalles de ${pc.pc_name}`}
+                            >
+                                <div className="npc-top-row">
+                                    <div className="npc-title-group">
+                                        <span className={`npc-led ${
+                                            !pc.online ? 'led-off' : isHeavy ? 'led-yellow' : isGaming ? 'led-purple' : 'led-blue'
+                                        }`} />
+                                        <span className="npc-name">{pc.pc_name}</span>
+                                    </div>
+                                    <span className="npc-ip-tag">{pc.ip.split('.').slice(2).join('.')}</span>
+                                </div>
+
+                                <div className="npc-wan-row">
+                                    {!pc.online ? (
+                                        <span className="npc-badge badge-off">Apagada / Libre</span>
+                                    ) : isGaming ? (
+                                        <span className="npc-badge badge-gaming">🎮 WAN 3 (Juego)</span>
+                                    ) : isHeavy ? (
+                                        <span className="npc-badge badge-heavy">⚡ Descarga Pesada</span>
+                                    ) : (
+                                        <span className="npc-badge badge-nav">🌐 WAN 1/2 (Nav)</span>
+                                    )}
+                                </div>
+
+                                <div className="npc-traffic-row">
+                                    <div className="npc-rate">
+                                        <span className="npc-dir">⬇️</span>
+                                        <span className="npc-num" style={{ color: isHeavy ? '#ffd600' : '#00e5ff' }}>
+                                            {pc.online ? `${rxMbps}M` : '0'}
+                                        </span>
+                                    </div>
+                                    <div className="npc-rate">
+                                        <span className="npc-dir">⬆️</span>
+                                        <span className="npc-num" style={{ color: '#b450ff' }}>
+                                            {pc.online ? `${txMbps}M` : '0'}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        )
+                    })}
+                </div>
+            </div>
+
+            {/* MODAL DETALLE DE PC SELECCIONADA */}
+            {selectedPc && (
+                <div className="npc-modal-backdrop" onClick={() => setSelectedPc(null)}>
+                    <div className="npc-modal-card" onClick={e => e.stopPropagation()}>
+                        <div className="npc-modal-head">
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <span className={`npc-led ${selectedPc.online ? 'led-blue' : 'led-off'}`} style={{ width: 14, height: 14 }} />
+                                <h3 className="npc-modal-title">{selectedPc.pc_name} · Detalles del Puesto</h3>
+                            </div>
+                            <button className="npc-modal-close" onClick={() => setSelectedPc(null)}>✕</button>
+                        </div>
+
+                        <div className="npc-modal-body">
+                            <div className="npm-info-grid">
+                                <div className="npm-info-item">
+                                    <span className="npm-label">Dirección IP</span>
+                                    <span className="npm-val" style={{ color: '#00e5ff' }}>{selectedPc.ip}</span>
+                                </div>
+                                <div className="npm-info-item">
+                                    <span className="npm-label">Estado de Enlace</span>
+                                    <span className="npm-val" style={{ color: selectedPc.online ? '#00ff88' : '#ff4444' }}>
+                                        {selectedPc.online ? '● Conectada al Switch' : '● Apagada / Desconectada'}
+                                    </span>
+                                </div>
+                                <div className="npm-info-item">
+                                    <span className="npm-label">Línea WAN Asignada</span>
+                                    <span className="npm-val" style={{ color: '#d18aff' }}>
+                                        {selectedPc.wan_active === 'wan3_gaming' ? 'WAN 3: Movistar Juegos (ether3)' : 'WAN 1 / WAN 2: Movistar Navegación'}
+                                    </span>
+                                </div>
+                                <div className="npm-info-item">
+                                    <span className="npm-label">Actividad Estimada</span>
+                                    <span className="npm-val" style={{ textTransform: 'capitalize' }}>
+                                        {selectedPc.actividad || 'Libre'}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div className="npm-traffic-box">
+                                <h4 style={{ margin: '0 0 10px 0', fontSize: '0.85rem', color: 'rgba(255,255,255,0.7)' }}>
+                                    Flujo de Tráfico Instantáneo
+                                </h4>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                                    <div className="npm-tcard">
+                                        <span style={{ fontSize: '0.75rem', color: '#00e5ff' }}>⬇️ Descarga Actual</span>
+                                        <span style={{ fontSize: '1.4rem', fontWeight: 800, color: '#fff' }}>
+                                            {(Number(selectedPc.rx_kbps || 0) / 1000).toFixed(2)} <small style={{ fontSize: '0.8rem' }}>Mbps</small>
+                                        </span>
+                                    </div>
+                                    <div className="npm-tcard">
+                                        <span style={{ fontSize: '0.75rem', color: '#b450ff' }}>⬆️ Subida Actual</span>
+                                        <span style={{ fontSize: '1.4rem', fontWeight: 800, color: '#fff' }}>
+                                            {(Number(selectedPc.tx_kbps || 0) / 1000).toFixed(2)} <small style={{ fontSize: '0.8rem' }}>Mbps</small>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <p style={{ margin: '14px 0 0 0', fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.4 }}>
+                                💡 <em>Las partidas online de Dota 2, Valorant y CS2 están enrutadas automáticamente por la WAN 3 (ether3) para mantener latencia de 6 a 15 ms.</em>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* SECCIÓN 4: ACCESOS RÁPIDOS A MÓDULOS DEL SISTEMA */}
             <div className="noc-modules-section">
                 <div className="noc-section-title-wrap">
                     <h2 className="noc-section-title">MÓDULOS DE ADMINISTRACIÓN ARCADIA</h2>

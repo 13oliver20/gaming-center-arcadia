@@ -571,3 +571,518 @@
         padding-bottom: 12px;
     }
 }
+
+
+/* ─── SECCIÓN 1: SALUD Y DIAGNÓSTICO DEL ROUTER MIKROTIK ─── */
+.noc-health-section {
+    margin-bottom: 32px;
+}
+
+.noc-health-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+}
+
+.nhc-card {
+    background: linear-gradient(135deg, rgba(16, 20, 48, 0.6) 0%, rgba(9, 11, 26, 0.8) 100%);
+    border: 1px solid rgba(0, 229, 255, 0.18);
+    border-radius: 16px;
+    padding: 20px 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+    transition: transform 0.2s, border-color 0.2s;
+}
+
+.nhc-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(0, 229, 255, 0.35);
+}
+
+.nhc-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.nhc-icon {
+    font-size: 1.3rem;
+}
+
+.nhc-title {
+    font-size: 0.82rem;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    color: rgba(255, 255, 255, 0.7);
+    text-transform: uppercase;
+    flex: 1;
+    margin-left: 8px;
+}
+
+.nhc-badge {
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.nhc-val-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.nhc-big-num {
+    font-size: 1.8rem;
+    font-weight: 900;
+    letter-spacing: -0.02em;
+}
+
+.nhc-big-num small {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.nhc-sub-text {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.nhc-bar-track {
+    width: 100%;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.nhc-bar-fill {
+    height: 100%;
+    border-radius: 6px;
+    transition: width 0.4s ease;
+}
+
+.nhc-specs-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.6);
+    padding-top: 4px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.nhc-specs-row strong {
+    color: #00e5ff;
+}
+
+/* ─── SECCIÓN 3: MAPA DE PISO - 40 COMPUTADORAS ─── */
+.noc-floor-section {
+    margin-bottom: 36px;
+}
+
+/* Banner de Top Consumidor */
+.noc-top-hogger-banner {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: linear-gradient(90deg, rgba(255, 170, 0, 0.15) 0%, rgba(255, 80, 80, 0.1) 100%);
+    border: 1px solid rgba(255, 170, 0, 0.4);
+    border-radius: 12px;
+    padding: 12px 18px;
+    margin-bottom: 18px;
+    animation: hoggerGlow 2.5s infinite alternate;
+}
+
+@keyframes hoggerGlow {
+    from { box-shadow: 0 0 10px rgba(255, 170, 0, 0.1); }
+    to { box-shadow: 0 0 20px rgba(255, 170, 0, 0.3); }
+}
+
+.nth-icon {
+    font-size: 1.4rem;
+}
+
+.nth-text {
+    flex: 1;
+    font-size: 0.88rem;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.nth-btn {
+    background: rgba(255, 170, 0, 0.2);
+    border: 1px solid rgba(255, 170, 0, 0.5);
+    color: #ffd600;
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.nth-btn:hover {
+    background: #ffd600;
+    color: #000;
+}
+
+/* Controles y Filtros de Piso */
+.noc-floor-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding: 10px 16px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+}
+
+.nfc-stats-pills {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    font-size: 0.78rem;
+}
+
+.nfc-stat-item {
+    color: rgba(255, 255, 255, 0.75);
+}
+
+.nfc-filter-tabs {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.nfc-tab {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.7);
+    padding: 5px 12px;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.nfc-tab:hover {
+    background: rgba(0, 229, 255, 0.1);
+    color: #00e5ff;
+}
+
+.nfc-tab.tab-active {
+    background: #00e5ff;
+    color: #000;
+    border-color: #00e5ff;
+    font-weight: 800;
+}
+
+/* Grilla de 40 PCs */
+.noc-pcs-grid {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 10px;
+}
+
+.npc-card {
+    background: rgba(14, 18, 42, 0.75);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    user-select: none;
+}
+
+.npc-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    border-color: rgba(0, 229, 255, 0.4);
+}
+
+.npc-card.npc-gaming {
+    border-color: rgba(180, 80, 255, 0.35);
+    background: linear-gradient(135deg, rgba(25, 16, 50, 0.7) 0%, rgba(14, 18, 42, 0.8) 100%);
+}
+
+.npc-card.npc-gaming:hover {
+    border-color: #d18aff;
+    box-shadow: 0 0 14px rgba(180, 80, 255, 0.3);
+}
+
+.npc-card.npc-heavy {
+    border-color: rgba(255, 214, 0, 0.45);
+    background: linear-gradient(135deg, rgba(40, 32, 10, 0.7) 0%, rgba(14, 18, 42, 0.8) 100%);
+}
+
+.npc-card.npc-offline {
+    opacity: 0.55;
+    background: rgba(10, 12, 24, 0.4);
+}
+
+.npc-top-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.npc-title-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.npc-name {
+    font-size: 0.82rem;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: 0.3px;
+}
+
+.npc-ip-tag {
+    font-size: 0.65rem;
+    color: rgba(255, 255, 255, 0.4);
+    font-family: monospace;
+}
+
+/* LEDs */
+.npc-led {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.led-purple {
+    background: #d18aff;
+    box-shadow: 0 0 8px #d18aff;
+}
+
+.led-blue {
+    background: #00e5ff;
+    box-shadow: 0 0 6px #00e5ff;
+}
+
+.led-yellow {
+    background: #ffd600;
+    box-shadow: 0 0 8px #ffd600;
+    animation: ledBlink 1s infinite;
+}
+
+.led-off {
+    background: #444;
+}
+
+@keyframes ledBlink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+}
+
+/* WAN Badge */
+.npc-wan-row {
+    display: flex;
+}
+
+.npc-badge {
+    font-size: 0.62rem;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    letter-spacing: 0.2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.badge-gaming {
+    background: rgba(180, 80, 255, 0.15);
+    color: #d18aff;
+    border: 1px solid rgba(180, 80, 255, 0.3);
+}
+
+.badge-nav {
+    background: rgba(0, 229, 255, 0.1);
+    color: #00e5ff;
+    border: 1px solid rgba(0, 229, 255, 0.25);
+}
+
+.badge-heavy {
+    background: rgba(255, 214, 0, 0.15);
+    color: #ffd600;
+    border: 1px solid rgba(255, 214, 0, 0.35);
+}
+
+.badge-off {
+    background: rgba(255, 255, 255, 0.05);
+    color: rgba(255, 255, 255, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Traffic row */
+.npc-traffic-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.68rem;
+    color: rgba(255, 255, 255, 0.6);
+    padding-top: 4px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.npc-rate {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.npc-dir {
+    font-size: 0.6rem;
+}
+
+.npc-num {
+    font-weight: 700;
+    font-family: monospace;
+}
+
+/* MODAL DE DETALLE DE PC */
+.npc-modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(6px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    padding: 16px;
+}
+
+.npc-modal-card {
+    background: #0d1127;
+    border: 1px solid rgba(0, 229, 255, 0.35);
+    border-radius: 16px;
+    width: 100%;
+    max-width: 480px;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.7), 0 0 24px rgba(0, 229, 255, 0.15);
+    overflow: hidden;
+    animation: modalPop 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modalPop {
+    from { opacity: 0; transform: scale(0.92); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+.npc-modal-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    background: rgba(255, 255, 255, 0.03);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.npc-modal-title {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: #fff;
+}
+
+.npc-modal-close {
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 4px;
+    transition: color 0.2s;
+}
+
+.npc-modal-close:hover {
+    color: #ff4444;
+}
+
+.npc-modal-body {
+    padding: 20px;
+}
+
+.npm-info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.npm-info-item {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    background: rgba(255, 255, 255, 0.03);
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.npm-label {
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.5);
+    text-transform: uppercase;
+}
+
+.npm-val {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #fff;
+}
+
+.npm-traffic-box {
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    padding: 14px;
+}
+
+.npm-tcard {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+    .noc-pcs-grid {
+        grid-template-columns: repeat(5, 1fr);
+    }
+    .noc-health-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .noc-pcs-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+    .noc-floor-controls {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+
+@media (max-width: 480px) {
+    .noc-pcs-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
