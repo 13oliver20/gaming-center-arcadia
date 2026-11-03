@@ -9,7 +9,7 @@ const DEFAULT_WANS = [
         nombre: 'WAN 1: Movistar 500M',
         interfaz: 'ether1',
         gateway: '192.168.10.1',
-        target_dns: '8.8.8.8 (Google)',
+        target_dns: '200.48.225.146 (DNS Movistar)',
         estado: 'online',
         latencia_ms: 12,
         rx_mbps: 24.5,
@@ -22,7 +22,7 @@ const DEFAULT_WANS = [
         nombre: 'WAN 2: Movistar 500M',
         interfaz: 'ether2',
         gateway: '192.168.20.1',
-        target_dns: '1.1.1.1 (Cloudflare)',
+        target_dns: '200.48.225.146 (DNS Movistar)',
         estado: 'online',
         latencia_ms: 15,
         rx_mbps: 5.1,
@@ -35,7 +35,7 @@ const DEFAULT_WANS = [
         nombre: 'WAN 3: Movistar 500M',
         interfaz: 'ether3',
         gateway: '192.168.30.1',
-        target_dns: '9.9.9.9 (Quad9)',
+        target_dns: '200.48.225.146 (DNS Movistar)',
         estado: 'online',
         latencia_ms: 13,
         rx_mbps: 31.8,
@@ -291,7 +291,7 @@ export default function AdminDashboard() {
                         // Porcentaje respecto a 500 Mbps contratados por línea
                         const rxPercent = Math.min(100, Math.round((rx / 500) * 100))
                         const txPercent = Math.min(100, Math.round((tx / 500) * 100))
-                        const dnsTarget = wan.target_dns || (idx === 0 ? '8.8.8.8 (Google)' : idx === 1 ? '1.1.1.1 (Cloudflare)' : '9.9.9.9 (Quad9)')
+                        const dnsTarget = wan.target_dns || '200.48.225.146 (DNS Movistar)'
 
                         return (
                             <div key={wan.id || idx} className={`noc-wan-card ${isOnline ? 'card-online' : 'card-offline'}`}>
