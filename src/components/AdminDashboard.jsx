@@ -129,11 +129,24 @@ export default function AdminDashboard() {
 
     const getLatencyQuality = (ms, isOnline) => {
         if (!isOnline) return { label: 'Sin respuesta', color: '#ff4444' }
-        if (ms === 0) return { label: '< 1 ms (Óptima / Directa)', color: '#00ff88' }
+        if (ms === 0) return { label: '< 1 ms (Local / Directo)', color: '#00ff88' }
         if (ms <= 20) return { label: 'Excelente para Gaming', color: '#00ff88' }
-        if (ms <= 50) return { label: 'Estable', color: '#00e5ff' }
-        if (ms <= 90) return { label: 'Moderada', color: '#ffaa00' }
-        return { label: 'Alta Latencia', color: '#ff4444' }
+        if (ms <= 50) return { label: 'Estable para Juegos', color: '#00e5ff' }
+        if (ms <= 90) return { label: 'Moderada / Retardo', color: '#ffaa00' }
+        return { label: 'Alta Latencia / Lag', color: '#ff4444' }
+    }
+
+    const parsePacketStats = (estado) => {
+        if (typeof estado === 'string' && estado.includes('/')) {
+            const parts = estado.replace(/[^0-9/]/g, '').split('/')
+            const rec = parseInt(parts[0], 10) || 0
+            const total = parseInt(parts[1], 10) || 30
+            const loss = Math.max(0, total - rec)
+            const lossPct = Math.round((loss / total) * 100)
+            return { rec, total, loss, lossPct, hasData: true }
+        }
+        const isOff = estado === 'offline'
+        return { rec: isOff ? 0 : 30, total: 30, loss: isOff ? 30 : 0, lossPct: isOff ? 100 : 0, hasData: false }
     }
 
     return (
@@ -238,7 +251,8 @@ export default function AdminDashboard() {
 
                 <div className="noc-wans-grid">
                     {wans.map((wan, idx) => {
-                        const isOffline = wan.estado === 'offline'
+                        const pkts = parsePacketStats(wan.estado)
+                        const isOffline = wan.estado === 'offline' || pkts.rec === 0
                         const isOnline = !isOffline
                         const rx = Number(wan.rx_mbps) || 0
                         const tx = Number(wan.tx_mbps) || 0
@@ -247,6 +261,7 @@ export default function AdminDashboard() {
                         // Porcentaje respecto a 500 Mbps contratados por línea
                         const rxPercent = Math.min(100, Math.round((rx / 500) * 100))
                         const txPercent = Math.min(100, Math.round((tx / 500) * 100))
+                        const dnsTarget = wan.target_dns || (idx === 0 ? '8.8.8.8 (Google)' : idx === 1 ? '1.1.1.1 (Cloudflare)' : '9.9.9.9 (Quad9)')
 
                         return (
                             <div key={wan.id || idx} className={`noc-wan-card ${isOnline ? 'card-online' : 'card-offline'}`}>
@@ -259,7 +274,7 @@ export default function AdminDashboard() {
                                         </div>
                                         <h3 className="nwc-name">{wan.nombre}</h3>
                                         <span className="nwc-gateway">
-                                            Gateway: {wan.gateway} · Ping DNS: <strong style={{ color: '#00e5ff' }}>{wan.target_dns || (idx === 0 ? '8.8.8.8 (Google)' : idx === 1 ? '1.1.1.1 (Cloudflare)' : '9.9.9.9 (Quad9)')}</strong>
+                                            Gateway: {wan.gateway} · Ping a: <strong style={{ color: '#00e5ff' }}>{dnsTarget}</strong>
                                         </span>
                                     </div>
 
@@ -278,20 +293,23 @@ export default function AdminDashboard() {
 
                                 {/* Métricas Principales */}
                                 <div className="nwc-metrics-body">
-                                    {/* Latencia MS */}
+                                    {/* Latencia MS & Paquetes */}
                                     <div className="nwc-metric-item nwc-latency-box">
                                         <div className="nwc-metric-head">
                                             <span className="nwc-m-icon">⚡</span>
-                                            <span className="nwc-m-label">RESPUESTA / PING</span>
+                                            <span className="nwc-m-label">RESPUESTA / LATENCIA</span>
                                         </div>
                                         <div className="nwc-latency-display">
                                             <span className="nwc-latency-num" style={{ color: latInfo.color }}>
-                                                {!isOnline ? '--' : (Number(wan.latencia_ms) === 0 ? '< 1' : wan.latencia_ms)}
+                                                {!isOnline ? '--' : wan.latencia_ms}
                                             </span>
                                             <span className="nwc-latency-unit">ms</span>
                                         </div>
                                         <span className="nwc-latency-desc" style={{ color: latInfo.color }}>
                                             ● {latInfo.label}
+                                        </span>
+                                        <span style={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.45)', marginTop: '4px' }}>
+                                            Destino: {dnsTarget}
                                         </span>
                                     </div>
 
@@ -333,13 +351,32 @@ export default function AdminDashboard() {
                                     </div>
                                 </div>
 
-                                {/* Footer de la tarjeta */}
+                                {/* Footer de la tarjeta con Paquetes y Estado */}
                                 <div className="nwc-footer">
+                                    <div className="nwc-packets-info" style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
+                                        <span className="nwc-packets-badge" style={{
+                                            background: pkts.loss === 0 ? 'rgba(0, 255, 136, 0.12)' : pkts.loss < 5 ? 'rgba(255, 214, 0, 0.12)' : 'rgba(255, 68, 68, 0.15)',
+                                            color: pkts.loss === 0 ? '#00ff88' : pkts.loss < 5 ? '#ffd600' : '#ff4444',
+                                            border: `1px solid ${pkts.loss === 0 ? 'rgba(0, 255, 136, 0.3)' : pkts.loss < 5 ? 'rgba(255, 214, 0, 0.3)' : 'rgba(255, 68, 68, 0.4)'}`,
+                                            padding: '2px 8px',
+                                            borderRadius: '6px',
+                                            fontSize: '0.72rem',
+                                            fontWeight: 700
+                                        }}>
+                                            📦 Paquetes: {pkts.rec}/{pkts.total} ({100 - pkts.lossPct}% entrega)
+                                        </span>
+                                        {pkts.loss > 0 && (
+                                            <span style={{ color: '#ffaa00', fontSize: '0.7rem' }}>
+                                                ({pkts.loss} perdidos · {pkts.lossPct}% pérdida)
+                                            </span>
+                                        )}
+                                    </div>
+
                                     <span className="nwc-traffic-status">
                                         {isResolving ? (
-                                            <span style={{ color: '#00ff88' }}>✓ Los paquetes fluyen normalmente por esta interfaz</span>
+                                            <span style={{ color: '#00ff88' }}>✓ Cursando tráfico</span>
                                         ) : (
-                                            <span style={{ color: '#ffaa00' }}>⚠️ Interfaz en reposo o sin balanceo activo</span>
+                                            <span style={{ color: '#ffaa00' }}>⚠️ En reposo / Sin carga</span>
                                         )}
                                     </span>
                                 </div>
