@@ -121,11 +121,12 @@ export default function AdminDashboard() {
     // Cálculos globales
     const totalRx = wans.reduce((acc, w) => acc + (Number(w.rx_mbps) || 0), 0)
     const totalTx = wans.reduce((acc, w) => acc + (Number(w.tx_mbps) || 0), 0)
-    const onlineCount = wans.filter(w => w.estado === 'online').length
-    const resolvingCount = wans.filter(w => w.resolviendo !== false && (Number(w.rx_mbps) > 0.1 || Number(w.tx_mbps) > 0.1)).length
+    const onlineCount = wans.filter(w => w.estado !== 'offline').length
+    const resolvingCount = wans.filter(w => w.estado !== 'offline' && (Number(w.rx_mbps) > 0.05 || Number(w.tx_mbps) > 0.05)).length
 
-    const getLatencyQuality = (ms) => {
-        if (ms <= 0) return { label: 'Sin ping', color: '#ff4d4d' }
+    const getLatencyQuality = (ms, isOnline) => {
+        if (!isOnline) return { label: 'Sin respuesta', color: '#ff4444' }
+        if (ms === 0) return { label: '< 1 ms (Óptima / Directa)', color: '#00ff88' }
         if (ms <= 20) return { label: 'Excelente para Gaming', color: '#00ff88' }
         if (ms <= 50) return { label: 'Estable', color: '#00e5ff' }
         if (ms <= 90) return { label: 'Moderada', color: '#ffaa00' }
@@ -234,11 +235,12 @@ export default function AdminDashboard() {
 
                 <div className="noc-wans-grid">
                     {wans.map((wan, idx) => {
-                        const isOnline = wan.estado === 'online'
-                        const isResolving = wan.resolviendo !== false && (Number(wan.rx_mbps) > 0.05 || Number(wan.tx_mbps) > 0.05)
-                        const latInfo = getLatencyQuality(Number(wan.latencia_ms) || 0)
+                        const isOffline = wan.estado === 'offline'
+                        const isOnline = !isOffline
                         const rx = Number(wan.rx_mbps) || 0
                         const tx = Number(wan.tx_mbps) || 0
+                        const isResolving = isOnline && (rx > 0.05 || tx > 0.05)
+                        const latInfo = getLatencyQuality(Number(wan.latencia_ms) || 0, isOnline)
                         // Porcentaje respecto a 500 Mbps contratados por línea
                         const rxPercent = Math.min(100, Math.round((rx / 500) * 100))
                         const txPercent = Math.min(100, Math.round((tx / 500) * 100))
@@ -279,7 +281,7 @@ export default function AdminDashboard() {
                                         </div>
                                         <div className="nwc-latency-display">
                                             <span className="nwc-latency-num" style={{ color: latInfo.color }}>
-                                                {wan.latencia_ms}
+                                                {!isOnline ? '--' : (Number(wan.latencia_ms) === 0 ? '< 1' : wan.latencia_ms)}
                                             </span>
                                             <span className="nwc-latency-unit">ms</span>
                                         </div>
