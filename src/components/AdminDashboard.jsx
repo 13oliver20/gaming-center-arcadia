@@ -944,14 +944,14 @@ export default function AdminDashboard() {
                     // MODO HORIZONTAL ("ACOSTADO" PARA PC)
                     return (
                         <div className="noc-floor-map floor-mode-horizontal">
-                            {/* COLUMNA 1: FILA 1 (01 a 05) */}
+                            {/* COLUMNA 1: FILA 1 (01 a 05 - De abajo hacia arriba) */}
                             <div className="nfm-h-column nfm-h-single">
                                 <div className="nfm-h-head">
                                     <span className="nfm-block-badge">FILA 1</span>
                                     <span className="nfm-h-sub">Pared Izq (01-05)</span>
                                 </div>
                                 <div className="nfm-h-stack-5">
-                                    {[1, 2, 3, 4, 5].map(renderPcCard)}
+                                    {[5, 4, 3, 2, 1].map(renderPcCard)}
                                 </div>
                             </div>
 
@@ -968,11 +968,11 @@ export default function AdminDashboard() {
                                 </div>
                                 <div className="nfm-h-double-grid">
                                     <div className="nfm-h-stack-5">
-                                        {[6, 7, 8, 9, 10].map(renderPcCard)}
+                                        {[10, 9, 8, 7, 6].map(renderPcCard)}
                                     </div>
                                     <div className="nfm-h-spine" title="Mesa compartida" />
                                     <div className="nfm-h-stack-5">
-                                        {[11, 12, 13, 14, 15].map(renderPcCard)}
+                                        {[15, 14, 13, 12, 11].map(renderPcCard)}
                                     </div>
                                 </div>
                             </div>
@@ -990,11 +990,11 @@ export default function AdminDashboard() {
                                 </div>
                                 <div className="nfm-h-double-grid">
                                     <div className="nfm-h-stack-5">
-                                        {[16, 17, 18, 19, 20].map(renderPcCard)}
+                                        {[20, 19, 18, 17, 16].map(renderPcCard)}
                                     </div>
                                     <div className="nfm-h-spine" title="Mesa compartida" />
                                     <div className="nfm-h-stack-5">
-                                        {[21, 22, 23, 24, 25].map(renderPcCard)}
+                                        {[25, 24, 23, 22, 21].map(renderPcCard)}
                                     </div>
                                 </div>
                             </div>
@@ -1012,11 +1012,11 @@ export default function AdminDashboard() {
                                 </div>
                                 <div className="nfm-h-double-grid">
                                     <div className="nfm-h-stack-5">
-                                        {[26, 27, 28, 29, 30].map(renderPcCard)}
+                                        {[30, 29, 28, 27, 26].map(renderPcCard)}
                                     </div>
                                     <div className="nfm-h-spine" title="Mesa compartida" />
                                     <div className="nfm-h-stack-5">
-                                        {[31, 32, 33, 34, 35].map(renderPcCard)}
+                                        {[35, 34, 33, 32, 31].map(renderPcCard)}
                                     </div>
                                 </div>
                             </div>
@@ -1033,7 +1033,7 @@ export default function AdminDashboard() {
                                     <span className="nfm-h-sub">Pared Der (36-40)</span>
                                 </div>
                                 <div className="nfm-h-stack-5">
-                                    {[36, 37, 38, 39, 40].map(renderPcCard)}
+                                    {[40, 39, 38, 37, 36].map(renderPcCard)}
                                 </div>
                             </div>
                         </div>
