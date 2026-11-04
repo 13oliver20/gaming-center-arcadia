@@ -99,6 +99,12 @@ export default function AdminDashboard() {
     const [health, setHealth] = useState(DEFAULT_HEALTH)
     const [clients, setClients] = useState(GENERATE_DEFAULT_CLIENTS)
     const [clientFilter, setClientFilter] = useState('all') // 'all', 'gaming', 'nav', 'heavy', 'offline'
+    const [floorOrientation, setFloorOrientation] = useState(() => {
+        if (typeof window !== 'undefined') {
+            return window.innerWidth >= 1024 ? 'horizontal' : 'vertical'
+        }
+        return 'horizontal'
+    })
     const [selectedPc, setSelectedPc] = useState(null)
     const [loading, setLoading] = useState(true)
     const [now, setNow] = useState(Date.now())
@@ -274,6 +280,28 @@ export default function AdminDashboard() {
         if (clientFilter === 'offline') return offlineClients
         return clients
     }, [clients, clientFilter, gamingClients, navClients, heavyClients, offlineClients])
+
+    // Formateador exacto en Kilobytes (KB) solicitado por el usuario
+    const formatKB = (val) => {
+        const num = Math.round(Number(val) || 0)
+        return `${num.toLocaleString()} KB`
+    }
+
+    // Obtener PC por número fijo de puesto (1 al 40) para mantener la distribución física
+    const getPcByNumber = (num) => {
+        const found = clients.find(c => c.pc_number === num)
+        if (found) return found
+        return {
+            ip: `192.168.1.${100 + num}`,
+            pc_name: `PC-${String(num).padStart(2, '0')}`,
+            pc_number: num,
+            online: false,
+            rx_kbps: 0,
+            tx_kbps: 0,
+            wan_active: 'idle',
+            actividad: 'apagada'
+        }
+    }
 
     const getLatencyQuality = (ms, isOnline) => {
         if (!isOnline) return { label: 'Sin respuesta', color: '#ff4444' }
@@ -724,23 +752,47 @@ export default function AdminDashboard() {
                             ⚫ Apagadas ({offlineClients.length})
                         </button>
                     </div>
+
+                    {/* Selector de Orientación: Horizontal (Acostado para PC) vs Vertical (Celular) */}
+                    <div className="nfc-orientation-wrap">
+                        <button 
+                            className={`nfc-orient-btn ${floorOrientation === 'horizontal' ? 'orient-active' : ''}`}
+                            onClick={() => setFloorOrientation('horizontal')}
+                            title="Vista panorámica horizontal acostada (Recomendada para PC y laptops)"
+                        >
+                            💻 Acostado (PC)
+                        </button>
+                        <button 
+                            className={`nfc-orient-btn ${floorOrientation === 'vertical' ? 'orient-active' : ''}`}
+                            onClick={() => setFloorOrientation('vertical')}
+                            title="Vista vertical apilada por islas (Recomendada para teléfonos móviles)"
+                        >
+                            📱 Vertical (Celular)
+                        </button>
+                    </div>
                 </div>
 
-                {/* Grilla Visual de las 40 PCs */}
-                <div className="noc-pcs-grid">
-                    {filteredClients.map(pc => {
-                        const rxMbps = (Number(pc.rx_kbps || 0) / 1000).toFixed(1)
-                        const txMbps = (Number(pc.tx_kbps || 0) / 1000).toFixed(1)
+                {/* RENDERIZADO DE LAS 40 PCS POR ISLAS FÍSICAS */}
+                {(() => {
+                    const renderPcCard = (pcNum) => {
+                        const pc = getPcByNumber(pcNum)
                         const isGaming = pc.online && (pc.wan_active === 'wan3_gaming' || pc.actividad === 'gaming')
                         const isHeavy = pc.online && Number(pc.rx_kbps) > 25000
                         const isNav = pc.online && !isGaming && !isHeavy
 
+                        const matchesFilter = 
+                            clientFilter === 'all' ? true :
+                            clientFilter === 'gaming' ? isGaming :
+                            clientFilter === 'nav' ? isNav :
+                            clientFilter === 'heavy' ? isHeavy :
+                            clientFilter === 'offline' ? !pc.online : true
+
                         return (
                             <div 
-                                key={pc.ip}
-                                className={`npc-card ${pc.online ? 'npc-online' : 'npc-offline'} ${isGaming ? 'npc-gaming' : ''} ${isHeavy ? 'npc-heavy' : ''}`}
+                                key={pc.ip || pcNum}
+                                className={`npc-card ${pc.online ? 'npc-online' : 'npc-offline'} ${isGaming ? 'npc-gaming' : ''} ${isHeavy ? 'npc-heavy' : ''} ${!matchesFilter ? 'npc-dimmed' : ''}`}
                                 onClick={() => setSelectedPc(pc)}
-                                title={`Clic para ver detalles de ${pc.pc_name}`}
+                                title={`Puesto #${pcNum} · ${pc.pc_name} (${pc.ip})`}
                             >
                                 <div className="npc-top-row">
                                     <div className="npc-title-group">
@@ -749,18 +801,18 @@ export default function AdminDashboard() {
                                         }`} />
                                         <span className="npc-name">{pc.pc_name}</span>
                                     </div>
-                                    <span className="npc-ip-tag">{pc.ip.split('.').slice(2).join('.')}</span>
+                                    <span className="npc-ip-tag">{pc.ip ? pc.ip.split('.').slice(2).join('.') : `1.${100 + pcNum}`}</span>
                                 </div>
 
                                 <div className="npc-wan-row">
                                     {!pc.online ? (
                                         <span className="npc-badge badge-off">Apagada / Libre</span>
                                     ) : isGaming ? (
-                                        <span className="npc-badge badge-gaming">🎮 WAN 3 (Juego)</span>
+                                        <span className="npc-badge badge-gaming">🎮 WAN 3</span>
                                     ) : isHeavy ? (
-                                        <span className="npc-badge badge-heavy">⚡ Descarga Pesada</span>
+                                        <span className="npc-badge badge-heavy">⚡ Descarga</span>
                                     ) : (
-                                        <span className="npc-badge badge-nav">🌐 WAN 1/2 (Nav)</span>
+                                        <span className="npc-badge badge-nav">🌐 WAN 1/2</span>
                                     )}
                                 </div>
 
@@ -768,20 +820,225 @@ export default function AdminDashboard() {
                                     <div className="npc-rate">
                                         <span className="npc-dir">⬇️</span>
                                         <span className="npc-num" style={{ color: isHeavy ? '#ffd600' : '#00e5ff' }}>
-                                            {pc.online ? `${rxMbps}M` : '0'}
+                                            {pc.online ? formatKB(pc.rx_kbps) : '0 KB'}
                                         </span>
                                     </div>
                                     <div className="npc-rate">
                                         <span className="npc-dir">⬆️</span>
                                         <span className="npc-num" style={{ color: '#b450ff' }}>
-                                            {pc.online ? `${txMbps}M` : '0'}
+                                            {pc.online ? formatKB(pc.tx_kbps) : '0 KB'}
                                         </span>
                                     </div>
                                 </div>
                             </div>
                         )
-                    })}
-                </div>
+                    }
+
+                    if (floorOrientation === 'vertical') {
+                        return (
+                            <div className="noc-floor-map floor-mode-vertical">
+                                {/* MÓDULO 1: FILA DE 5 (Pared Frontal) */}
+                                <div className="nfm-v-block">
+                                    <div className="nfm-block-header">
+                                        <span className="nfm-block-badge">FILA 1 · PARED FRONTAL</span>
+                                        <span className="nfm-block-range">Puestos 01 a 05</span>
+                                    </div>
+                                    <div className="nfm-grid-row-5">
+                                        {[1, 2, 3, 4, 5].map(renderPcCard)}
+                                    </div>
+                                </div>
+
+                                {/* PASILLO 1 */}
+                                <div className="nfm-aisle-divider">
+                                    <span className="nfm-aisle-line" />
+                                    <span className="nfm-aisle-text">🚶‍♂️ PASILLO 1</span>
+                                    <span className="nfm-aisle-line" />
+                                </div>
+
+                                {/* MÓDULO 2: ISLA CENTRAL 1 (10 PCs Frente a Frente) */}
+                                <div className="nfm-v-block nfm-double-island">
+                                    <div className="nfm-block-header">
+                                        <span className="nfm-block-badge">ISLA CENTRAL 1 (10 PCs)</span>
+                                        <span className="nfm-block-range">Puestos 06 a 15 · Frente a Frente</span>
+                                    </div>
+                                    <div className="nfm-grid-row-5">
+                                        {[6, 7, 8, 9, 10].map(renderPcCard)}
+                                    </div>
+                                    <div className="nfm-desk-separator">
+                                        <span className="nds-label">◄ MESA COMPARTIDA · FRENTE A FRENTE ►</span>
+                                    </div>
+                                    <div className="nfm-grid-row-5">
+                                        {[11, 12, 13, 14, 15].map(renderPcCard)}
+                                    </div>
+                                </div>
+
+                                {/* PASILLO 2 */}
+                                <div className="nfm-aisle-divider">
+                                    <span className="nfm-aisle-line" />
+                                    <span className="nfm-aisle-text">🚶‍♂️ PASILLO 2</span>
+                                    <span className="nfm-aisle-line" />
+                                </div>
+
+                                {/* MÓDULO 3: ISLA CENTRAL 2 (10 PCs Frente a Frente) */}
+                                <div className="nfm-v-block nfm-double-island">
+                                    <div className="nfm-block-header">
+                                        <span className="nfm-block-badge">ISLA CENTRAL 2 (10 PCs)</span>
+                                        <span className="nfm-block-range">Puestos 16 a 25 · Frente a Frente</span>
+                                    </div>
+                                    <div className="nfm-grid-row-5">
+                                        {[16, 17, 18, 19, 20].map(renderPcCard)}
+                                    </div>
+                                    <div className="nfm-desk-separator">
+                                        <span className="nds-label">◄ MESA COMPARTIDA · FRENTE A FRENTE ►</span>
+                                    </div>
+                                    <div className="nfm-grid-row-5">
+                                        {[21, 22, 23, 24, 25].map(renderPcCard)}
+                                    </div>
+                                </div>
+
+                                {/* PASILLO 3 */}
+                                <div className="nfm-aisle-divider">
+                                    <span className="nfm-aisle-line" />
+                                    <span className="nfm-aisle-text">🚶‍♂️ PASILLO 3</span>
+                                    <span className="nfm-aisle-line" />
+                                </div>
+
+                                {/* MÓDULO 4: ISLA CENTRAL 3 (10 PCs Frente a Frente) */}
+                                <div className="nfm-v-block nfm-double-island">
+                                    <div className="nfm-block-header">
+                                        <span className="nfm-block-badge">ISLA CENTRAL 3 (10 PCs)</span>
+                                        <span className="nfm-block-range">Puestos 26 a 35 · Frente a Frente</span>
+                                    </div>
+                                    <div className="nfm-grid-row-5">
+                                        {[26, 27, 28, 29, 30].map(renderPcCard)}
+                                    </div>
+                                    <div className="nfm-desk-separator">
+                                        <span className="nds-label">◄ MESA COMPARTIDA · FRENTE A FRENTE ►</span>
+                                    </div>
+                                    <div className="nfm-grid-row-5">
+                                        {[31, 32, 33, 34, 35].map(renderPcCard)}
+                                    </div>
+                                </div>
+
+                                {/* PASILLO 4 */}
+                                <div className="nfm-aisle-divider">
+                                    <span className="nfm-aisle-line" />
+                                    <span className="nfm-aisle-text">🚶‍♂️ PASILLO 4</span>
+                                    <span className="nfm-aisle-line" />
+                                </div>
+
+                                {/* MÓDULO 5: FILA DE 5 (Pared Posterior) */}
+                                <div className="nfm-v-block">
+                                    <div className="nfm-block-header">
+                                        <span className="nfm-block-badge">FILA 5 · PARED POSTERIOR</span>
+                                        <span className="nfm-block-range">Puestos 36 a 40</span>
+                                    </div>
+                                    <div className="nfm-grid-row-5">
+                                        {[36, 37, 38, 39, 40].map(renderPcCard)}
+                                    </div>
+                                </div>
+                            </div>
+                        )
+                    }
+
+                    // MODO HORIZONTAL ("ACOSTADO" PARA PC)
+                    return (
+                        <div className="noc-floor-map floor-mode-horizontal">
+                            {/* COLUMNA 1: FILA 1 (01 a 05) */}
+                            <div className="nfm-h-column nfm-h-single">
+                                <div className="nfm-h-head">
+                                    <span className="nfm-block-badge">FILA 1</span>
+                                    <span className="nfm-h-sub">Pared Izq (01-05)</span>
+                                </div>
+                                <div className="nfm-h-stack-5">
+                                    {[1, 2, 3, 4, 5].map(renderPcCard)}
+                                </div>
+                            </div>
+
+                            {/* PASILLO 1 */}
+                            <div className="nfm-h-aisle-divider">
+                                <span className="nfm-h-aisle-text">PASILLO 1</span>
+                            </div>
+
+                            {/* COLUMNA 2: ISLA CENTRAL 1 (06 a 15) */}
+                            <div className="nfm-h-column nfm-h-double">
+                                <div className="nfm-h-head">
+                                    <span className="nfm-block-badge">ISLA 1</span>
+                                    <span className="nfm-h-sub">PCs 06-15 Frente a Frente</span>
+                                </div>
+                                <div className="nfm-h-double-grid">
+                                    <div className="nfm-h-stack-5">
+                                        {[6, 7, 8, 9, 10].map(renderPcCard)}
+                                    </div>
+                                    <div className="nfm-h-spine" title="Mesa compartida" />
+                                    <div className="nfm-h-stack-5">
+                                        {[11, 12, 13, 14, 15].map(renderPcCard)}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* PASILLO 2 */}
+                            <div className="nfm-h-aisle-divider">
+                                <span className="nfm-h-aisle-text">PASILLO 2</span>
+                            </div>
+
+                            {/* COLUMNA 3: ISLA CENTRAL 2 (16 a 25) */}
+                            <div className="nfm-h-column nfm-h-double">
+                                <div className="nfm-h-head">
+                                    <span className="nfm-block-badge">ISLA 2</span>
+                                    <span className="nfm-h-sub">PCs 16-25 Frente a Frente</span>
+                                </div>
+                                <div className="nfm-h-double-grid">
+                                    <div className="nfm-h-stack-5">
+                                        {[16, 17, 18, 19, 20].map(renderPcCard)}
+                                    </div>
+                                    <div className="nfm-h-spine" title="Mesa compartida" />
+                                    <div className="nfm-h-stack-5">
+                                        {[21, 22, 23, 24, 25].map(renderPcCard)}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* PASILLO 3 */}
+                            <div className="nfm-h-aisle-divider">
+                                <span className="nfm-h-aisle-text">PASILLO 3</span>
+                            </div>
+
+                            {/* COLUMNA 4: ISLA CENTRAL 3 (26 a 35) */}
+                            <div className="nfm-h-column nfm-h-double">
+                                <div className="nfm-h-head">
+                                    <span className="nfm-block-badge">ISLA 3</span>
+                                    <span className="nfm-h-sub">PCs 26-35 Frente a Frente</span>
+                                </div>
+                                <div className="nfm-h-double-grid">
+                                    <div className="nfm-h-stack-5">
+                                        {[26, 27, 28, 29, 30].map(renderPcCard)}
+                                    </div>
+                                    <div className="nfm-h-spine" title="Mesa compartida" />
+                                    <div className="nfm-h-stack-5">
+                                        {[31, 32, 33, 34, 35].map(renderPcCard)}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* PASILLO 4 */}
+                            <div className="nfm-h-aisle-divider">
+                                <span className="nfm-h-aisle-text">PASILLO 4</span>
+                            </div>
+
+                            {/* COLUMNA 5: FILA 5 (36 a 40) */}
+                            <div className="nfm-h-column nfm-h-single">
+                                <div className="nfm-h-head">
+                                    <span className="nfm-block-badge">FILA 5</span>
+                                    <span className="nfm-h-sub">Pared Der (36-40)</span>
+                                </div>
+                                <div className="nfm-h-stack-5">
+                                    {[36, 37, 38, 39, 40].map(renderPcCard)}
+                                </div>
+                            </div>
+                        </div>
+                    )
+                })()}
             </div>
 
             {/* MODAL DETALLE DE PC SELECCIONADA */}
@@ -829,15 +1086,25 @@ export default function AdminDashboard() {
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                                     <div className="npm-tcard">
                                         <span style={{ fontSize: '0.75rem', color: '#00e5ff' }}>⬇️ Descarga Actual</span>
-                                        <span style={{ fontSize: '1.4rem', fontWeight: 800, color: '#fff' }}>
-                                            {(Number(selectedPc.rx_kbps || 0) / 1000).toFixed(2)} <small style={{ fontSize: '0.8rem' }}>Mbps</small>
-                                        </span>
+                                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
+                                            <span style={{ fontSize: '1.4rem', fontWeight: 800, color: '#fff' }}>
+                                                {formatKB(selectedPc.rx_kbps)}
+                                            </span>
+                                            <small style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.45)' }}>
+                                                ({(Number(selectedPc.rx_kbps || 0) / 1000).toFixed(2)} Mbps)
+                                            </small>
+                                        </div>
                                     </div>
                                     <div className="npm-tcard">
                                         <span style={{ fontSize: '0.75rem', color: '#b450ff' }}>⬆️ Subida Actual</span>
-                                        <span style={{ fontSize: '1.4rem', fontWeight: 800, color: '#fff' }}>
-                                            {(Number(selectedPc.tx_kbps || 0) / 1000).toFixed(2)} <small style={{ fontSize: '0.8rem' }}>Mbps</small>
-                                        </span>
+                                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
+                                            <span style={{ fontSize: '1.4rem', fontWeight: 800, color: '#fff' }}>
+                                                {formatKB(selectedPc.tx_kbps)}
+                                            </span>
+                                            <small style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.45)' }}>
+                                                ({(Number(selectedPc.tx_kbps || 0) / 1000).toFixed(2)} Mbps)
+                                            </small>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
