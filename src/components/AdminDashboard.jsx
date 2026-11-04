@@ -240,8 +240,17 @@ export default function AdminDashboard() {
     // Cálculos globales WANs
     const totalRx = wans.reduce((acc, w) => acc + (Number(w.rx_mbps) || 0), 0)
     const totalTx = wans.reduce((acc, w) => acc + (Number(w.tx_mbps) || 0), 0)
-    const onlineCount = wans.filter(w => w.estado !== 'offline').length
-    const resolvingCount = wans.filter(w => w.estado !== 'offline' && (Number(w.rx_mbps) > 0.05 || Number(w.tx_mbps) > 0.05)).length
+    const isWanAlive = (w) => {
+        if (!w || w.estado === 'offline') return false
+        if (typeof w.estado === 'string' && w.estado.includes('/')) {
+            const parts = w.estado.replace(/[^0-9/]/g, '').split('/')
+            const rec = parseInt(parts[0], 10) || 0
+            if (rec === 0) return false
+        }
+        return true
+    }
+    const onlineCount = wans.filter(isWanAlive).length
+    const resolvingCount = wans.filter(w => isWanAlive(w) && (Number(w.rx_mbps) > 0.05 || Number(w.tx_mbps) > 0.05)).length
 
     // Cálculos de clientes (40 PCs)
     const onlineClients = clients.filter(c => c.online)
@@ -490,11 +499,11 @@ export default function AdminDashboard() {
                     {wans.map((wan, idx) => {
                         const pkts = parsePacketStats(wan.estado)
                         const latMs = Number(wan.latencia_ms) || 0
-                        const hasLatency = latMs > 0
-                        const isOffline = wan.estado === 'offline' || (pkts.hasData && pkts.rec === 0 && !hasLatency)
+                        const isOffline = !isWanAlive(wan)
                         const isOnline = !isOffline
-                        const rx = Number(wan.rx_mbps) || 0
-                        const tx = Number(wan.tx_mbps) || 0
+                        const hasLatency = latMs > 0 && isOnline
+                        const rx = isOnline ? (Number(wan.rx_mbps) || 0) : 0
+                        const tx = isOnline ? (Number(wan.tx_mbps) || 0) : 0
                         const isResolving = isOnline && (rx > 0.05 || tx > 0.05)
                         const latInfo = getLatencyQuality(latMs, isOnline || hasLatency)
                         const rxPercent = Math.min(100, Math.round((rx / 500) * 100))

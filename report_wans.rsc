@@ -1,7 +1,7 @@
 # ========================================================
 # GAMING CENTER ARCADIA - NOC MIKROTIK TELEMETRY & 40 PCS
 # RouterOS v6.49 - Monitoreo Completo de WANs, Salud y 40 PCs
-# Optimizado: 100% libre de errores de sintaxis y buffer seguro
+# Anti-Failover: Detecta caídas físicas y cortes de enlace sin falso positivo
 # ========================================================
 
 :do {
@@ -15,38 +15,72 @@
   # ==========================================
   # 1. MONITOREO DE LAS 3 LINEAS WAN
   # ==========================================
+
+  # --- WAN 1 (ether1) -> Gateway: 192.168.10.1 ---
   :local rx1 0; :local tx1 0;
   /interface monitor-traffic ether1 once do={ :set rx1 $"rx-bits-per-second"; :set tx1 $"tx-bits-per-second" }
   :local rx1m ($rx1 / 1000000); :local tx1m ($tx1 / 1000000)
-  /ip route set [find comment="PING_MOVISTAR"] gateway=192.168.10.1
-  :local p1 [/ping $target count=30 interval=150ms]
+  :local gw1Up [/ping 192.168.10.1 count=2 interval=100ms]
+  :local p1 0
   :local rtt1 0
-  /tool flood-ping $target count=10 do={ :if ($sent = 10) do={ :set rtt1 $"avg-rtt" } }
-  :local st1 ($p1 . "/30")
-  :local res1 "true"
-  :if ($p1 = 0) do={ :set res1 "false" }
+  :local st1 "0/30"
+  :local res1 "false"
+  :if ($gw1Up > 0) do={
+    /ip route set [find comment="PING_MOVISTAR"] gateway=192.168.10.1
+    :set p1 [/ping $target interface=ether1 count=30 interval=150ms]
+    :if ($p1 > 0) do={
+      /tool flood-ping $target count=10 do={ :if ($sent = 10) do={ :set rtt1 $"avg-rtt" } }
+      :set res1 "true"
+    }
+    :set st1 ($p1 . "/30")
+  } else={
+    :set rx1m 0
+    :set tx1m 0
+  }
 
+  # --- WAN 2 (ether2) -> Gateway: 192.168.20.1 ---
   :local rx2 0; :local tx2 0;
   /interface monitor-traffic ether2 once do={ :set rx2 $"rx-bits-per-second"; :set tx2 $"tx-bits-per-second" }
   :local rx2m ($rx2 / 1000000); :local tx2m ($tx2 / 1000000)
-  /ip route set [find comment="PING_MOVISTAR"] gateway=192.168.20.1
-  :local p2 [/ping $target count=30 interval=150ms]
+  :local gw2Up [/ping 192.168.20.1 count=2 interval=100ms]
+  :local p2 0
   :local rtt2 0
-  /tool flood-ping $target count=10 do={ :if ($sent = 10) do={ :set rtt2 $"avg-rtt" } }
-  :local st2 ($p2 . "/30")
-  :local res2 "true"
-  :if ($p2 = 0) do={ :set res2 "false" }
+  :local st2 "0/30"
+  :local res2 "false"
+  :if ($gw2Up > 0) do={
+    /ip route set [find comment="PING_MOVISTAR"] gateway=192.168.20.1
+    :set p2 [/ping $target interface=ether2 count=30 interval=150ms]
+    :if ($p2 > 0) do={
+      /tool flood-ping $target count=10 do={ :if ($sent = 10) do={ :set rtt2 $"avg-rtt" } }
+      :set res2 "true"
+    }
+    :set st2 ($p2 . "/30")
+  } else={
+    :set rx2m 0
+    :set tx2m 0
+  }
 
+  # --- WAN 3 (ether3) -> Gateway: 192.168.30.1 ---
   :local rx3 0; :local tx3 0;
   /interface monitor-traffic ether3 once do={ :set rx3 $"rx-bits-per-second"; :set tx3 $"tx-bits-per-second" }
   :local rx3m ($rx3 / 1000000); :local tx3m ($tx3 / 1000000)
-  /ip route set [find comment="PING_MOVISTAR"] gateway=192.168.30.1
-  :local p3 [/ping $target count=30 interval=150ms]
+  :local gw3Up [/ping 192.168.30.1 count=2 interval=100ms]
+  :local p3 0
   :local rtt3 0
-  /tool flood-ping $target count=10 do={ :if ($sent = 10) do={ :set rtt3 $"avg-rtt" } }
-  :local st3 ($p3 . "/30")
-  :local res3 "true"
-  :if ($p3 = 0) do={ :set res3 "false" }
+  :local st3 "0/30"
+  :local res3 "false"
+  :if ($gw3Up > 0) do={
+    /ip route set [find comment="PING_MOVISTAR"] gateway=192.168.30.1
+    :set p3 [/ping $target interface=ether3 count=30 interval=150ms]
+    :if ($p3 > 0) do={
+      /tool flood-ping $target count=10 do={ :if ($sent = 10) do={ :set rtt3 $"avg-rtt" } }
+      :set res3 "true"
+    }
+    :set st3 ($p3 . "/30")
+  } else={
+    :set rx3m 0
+    :set tx3m 0
+  }
 
   :local data ("[" . \
     "{\"id\":\"wan1\",\"nombre\":\"WAN 1: Movistar 500M\",\"interfaz\":\"ether1\",\"gateway\":\"192.168.10.1\",\"estado\":\"" . $st1 . "\",\"latencia_ms\":" . $rtt1 . ",\"rx_mbps\":" . $rx1m . ",\"tx_mbps\":" . $tx1m . ",\"resolviendo\":" . $res1 . "}," . \
