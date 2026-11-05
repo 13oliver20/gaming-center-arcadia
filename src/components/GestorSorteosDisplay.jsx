@@ -328,12 +328,7 @@ const GestorSorteosDisplay = ({ onLoaded }) => {
                                             </div>
                                             <div className="gpc-player-info">
                                                 {winner && winner.usuarios ? (
-                                                    <>
-                                                        <div className="gpc-nick">@{winner.usuarios.nickname?.toUpperCase()}</div>
-                                                        {winner.usuarios.nombre_real && (
-                                                            <div className="gpc-realname">{winner.usuarios.nombre_real}</div>
-                                                        )}
-                                                    </>
+                                                    <div className="gpc-nick">@{winner.usuarios.nickname?.toUpperCase()}</div>
                                                 ) : (
                                                     <div className="gpc-waiting">Esperando ganador...</div>
                                                 )}
