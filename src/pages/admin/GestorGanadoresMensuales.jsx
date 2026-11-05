@@ -4,11 +4,28 @@ import './GestorGanadoresMensuales.css'
 import {
     getPeruDateParts,
     getPeruMonthRange,
+    getPeruMonthTargetDate,
     getPeruMonthName
 } from '../../utils/peruTime'
 import { searchUsersList, highlightMatch } from '../../utils/userSearch'
 
+const MESES_LIST = [
+    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+]
+
 const GestorGanadoresMensuales = () => {
+    // Mes actual en Perú
+    const { year: curPeruYear, month: curPeruMonth } = getPeruDateParts()
+    const prevMonthNumber = curPeruMonth === 1 ? 12 : curPeruMonth - 1
+    const prevYearNumber = curPeruMonth === 1 ? curPeruYear - 1 : curPeruYear
+
+    // Periodo seleccionado para gestionar (por defecto el mes anterior que acaba de cerrar)
+    const [selectedPeriod, setSelectedPeriod] = useState({
+        year: prevYearNumber,
+        month: prevMonthNumber
+    })
+
     // State for History
     const [historialAgrupado, setHistorialAgrupado] = useState({})
     const [expandedYears, setExpandedYears] = useState({})
@@ -16,8 +33,7 @@ const GestorGanadoresMensuales = () => {
 
     // Helper to format month number to string
     const getMonthName = (monthIndex) => {
-        const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
-        return months[monthIndex]
+        return MESES_LIST[monthIndex] || ''
     }
 
     // State for the 5 positions
@@ -69,25 +85,13 @@ const GestorGanadoresMensuales = () => {
         return () => supabase.removeChannel(channel)
     }, [])
 
-    // Cargar datos iniciales y configurar detector de cambio de mes en Perú (GMT-5)
+    // Cargar datos al cambiar de periodo seleccionado
     useEffect(() => {
-        fetchGanadores()
+        fetchGanadores(selectedPeriod.year, selectedPeriod.month)
         fetchHistorial()
+    }, [selectedPeriod.year, selectedPeriod.month])
 
-        // Monitorear periódicamente si cambia el mes en Perú para reiniciar la vista a las 00:00 del día 1
-        let lastMonthKey = `${getPeruDateParts().year}-${getPeruDateParts().month}`
-        const monthCheckTimer = setInterval(() => {
-            const currentMonthKey = `${getPeruDateParts().year}-${getPeruDateParts().month}`
-            if (currentMonthKey !== lastMonthKey) {
-                lastMonthKey = currentMonthKey
-                fetchGanadores()
-                fetchHistorial()
-            }
-        }, 10000)
-
-        return () => clearInterval(monthCheckTimer)
-    }, [])
-
+    // Cargar historial inicial
     const fetchHistorial = async () => {
         setLoadingHistorial(true)
         try {
@@ -103,18 +107,12 @@ const GestorGanadoresMensuales = () => {
             }
 
             if (data && data.length > 0) {
-                // Determinar el mes actual en Perú (GMT-5) para no mezclarlo en el historial
-                const { year: currentYear, month: currentMonth } = getPeruDateParts()
-
                 const agrupado = {}
 
                 data.forEach(item => {
                     const itemParts = getPeruDateParts(new Date(item.created_at))
                     const year = itemParts.year
                     const month = itemParts.month - 1 // 0-indexed para getMonthName
-
-                    // Omitir el mes actual (sus ganadores pertenecen al panel activo superior)
-                    if (year === currentYear && itemParts.month === currentMonth) return
 
                     if (!agrupado[year]) agrupado[year] = {}
                     if (!agrupado[year][month]) agrupado[year][month] = []
@@ -150,11 +148,11 @@ const GestorGanadoresMensuales = () => {
         setExpandedYears(prev => ({ ...prev, [year]: !prev[year] }))
     }
 
-    const fetchGanadores = async () => {
+    const fetchGanadores = async (year, month) => {
         setLoadingDb(true)
         try {
-            // Rango exacto del mes en hora de Perú (00:00:00 del día 1 hasta 23:59:59 del último día)
-            const { startIso, endIso } = getPeruMonthRange()
+            // Rango exacto del mes seleccionado en hora de Perú
+            const { startIso, endIso } = getPeruMonthRange(year, month)
 
             const { data, error } = await supabase
                 .from('ganadores_mensuales')
@@ -169,7 +167,7 @@ const GestorGanadoresMensuales = () => {
                     console.error('Error fetching ganadores:', error)
                 }
             } else {
-                // Mapear exactamente las 5 posiciones (si no hay datos o es nuevo mes, quedan limpias esperando nuevos ganadores)
+                // Mapear exactamente las 5 posiciones para el mes consultado
                 const updatedGanadores = [1, 2, 3, 4, 5].map(pos => {
                     const found = (data || []).find(r => r.posicion === pos)
                     return {
@@ -181,13 +179,15 @@ const GestorGanadoresMensuales = () => {
                 setGanadores(updatedGanadores)
             }
 
-            // Cargar usuarios en caché para el Buscador Maestro instantáneo
-            const { data: allUsers } = await supabase
-                .from('usuarios')
-                .select('id, nickname, nombre_real')
-                .order('nickname', { ascending: true })
-            if (allUsers) {
-                allUsersRef.current = allUsers
+            // Cargar usuarios en caché para el Buscador Maestro instantáneo si no están en caché
+            if (!allUsersRef.current || allUsersRef.current.length === 0) {
+                const { data: allUsers } = await supabase
+                    .from('usuarios')
+                    .select('id, nickname, nombre_real')
+                    .order('nickname', { ascending: true })
+                if (allUsers) {
+                    allUsersRef.current = allUsers
+                }
             }
 
         } catch (e) {
@@ -234,7 +234,6 @@ const GestorGanadoresMensuales = () => {
     }
 
     const selectUser = (pos, user) => {
-        // Check if user is already selected somewhere else
         const alreadyInPos = ganadores.find(g => g.usuario && g.usuario.id === user.id)
         if (alreadyInPos && alreadyInPos.pos !== pos) {
             showToast(`El usuario @${user.nickname} ya está en la posición ${alreadyInPos.pos}`, 'error')
@@ -247,8 +246,8 @@ const GestorGanadoresMensuales = () => {
             newGanadores[idx].usuario = user
         }
         setGanadores(newGanadores)
-        setActiveSearch(null) // close dropdown
-        setSearchTerms(prev => ({ ...prev, [pos]: '' })) // clear search term
+        setActiveSearch(null)
+        setSearchTerms(prev => ({ ...prev, [pos]: '' }))
     }
 
     const clearUser = (pos) => {
@@ -256,13 +255,12 @@ const GestorGanadoresMensuales = () => {
         const idx = newGanadores.findIndex(g => g.pos === pos)
         if (idx !== -1) {
             newGanadores[idx].usuario = null
-            newGanadores[idx].puntos = '' // clean points when clearing user
+            newGanadores[idx].puntos = ''
         }
         setGanadores(newGanadores)
     }
 
     const handlePointsChange = (pos, val) => {
-        // Allow empty or numeric values
         if (val !== '' && !/^\d+$/.test(val)) return
 
         let newGanadores = [...ganadores]
@@ -289,15 +287,16 @@ const GestorGanadoresMensuales = () => {
     }
 
     const handleSaveConfirm = async () => {
-        if (!confirmDialogPos) return;
+        if (!confirmDialogPos) return
         setSaving(true)
         try {
             const targetData = ganadores.find(g => g.pos === confirmDialogPos)
 
-            // Rango mensual en Perú (GMT-5)
-            const { startIso, endIso } = getPeruMonthRange()
+            // Rango y fecha meta para el mes seleccionado
+            const { startIso, endIso } = getPeruMonthRange(selectedPeriod.year, selectedPeriod.month)
+            const targetCreatedAt = getPeruMonthTargetDate(selectedPeriod.year, selectedPeriod.month)
 
-            // Upsert mechanism: delete old record for this pos ONLY for the current month in Peru, then insert
+            // Eliminar registro anterior de esa posición en el mes seleccionado
             const { error: delError } = await supabase
                 .from('ganadores_mensuales')
                 .delete()
@@ -315,17 +314,22 @@ const GestorGanadoresMensuales = () => {
                     .insert([{
                         posicion: targetData.pos,
                         usuario_id: targetData.usuario.id,
-                        puntos: targetData.puntos || null
+                        puntos: targetData.puntos || null,
+                        created_at: targetCreatedAt
                     }])
 
                 if (insError) throw insError
             }
 
-            showToast(`✅ Cambios guardados para el ${confirmDialogPos}º Lugar.`, 'success')
+            const monthName = MESES_LIST[selectedPeriod.month - 1]
+            showToast(`✅ Guardado para ${confirmDialogPos}º Lugar (${monthName} ${selectedPeriod.year}).`, 'success')
             setIsEditing(prev => ({ ...prev, [confirmDialogPos]: false }))
             setConfirmDialogPos(null)
 
-            // Emitir evento para actualizar en tiempo real la otra vista
+            // Refrescar historial para reflejar los cambios
+            fetchHistorial()
+
+            // Emitir evento para actualizar en tiempo real el Display de TV
             if (channelRef.current) {
                 channelRef.current.send({
                     type: 'broadcast',
@@ -342,16 +346,89 @@ const GestorGanadoresMensuales = () => {
         }
     }
 
+    // Funciones para navegar entre meses
+    const handlePrevMonth = () => {
+        setSelectedPeriod(prev => {
+            const newMonth = prev.month === 1 ? 12 : prev.month - 1
+            const newYear = prev.month === 1 ? prev.year - 1 : prev.year
+            return { year: newYear, month: newMonth }
+        })
+    }
+
+    const handleNextMonth = () => {
+        setSelectedPeriod(prev => {
+            const newMonth = prev.month === 12 ? 1 : prev.month + 1
+            const newYear = prev.month === 12 ? prev.year + 1 : prev.year
+            return { year: newYear, month: newMonth }
+        })
+    }
+
+    const handleSelectCurrentMonth = () => {
+        setSelectedPeriod({ year: curPeruYear, month: curPeruMonth })
+    }
+
+    const handleSelectPrevClosedMonth = () => {
+        setSelectedPeriod({ year: prevYearNumber, month: prevMonthNumber })
+    }
+
+    const loadHistoricalMonth = (year, monthZeroIndexed) => {
+        setSelectedPeriod({ year: Number(year), month: Number(monthZeroIndexed) + 1 })
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+        showToast(`Cargando ganadores de ${MESES_LIST[monthZeroIndexed]} ${year}...`, 'success')
+    }
+
+    const selectedMonthName = MESES_LIST[selectedPeriod.month - 1]
+
     return (
         <div className="ggm-page">
-            <div className="ggm-header" style={{ display: 'flex', flexWrap: 'wrap', gap: '20px', alignItems: 'center' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span className="ggm-header-icon">🏅</span>
-                    <h2 className="ggm-title" style={{ margin: 0 }}>
-                        Gestor de Ganadores Mensuales <span style={{ color: '#00e5ff', fontSize: '1.05rem', marginLeft: '8px', fontWeight: 500 }}>({getPeruMonthRange().monthName} {getPeruMonthRange().year})</span>
-                    </h2>
+            <div className="ggm-header">
+                <div className="ggm-header-left">
+                    <span className="ggm-header-icon">🏆</span>
+                    <div>
+                        <h2 className="ggm-title">Gestor de Ganadores Mensuales</h2>
+                        <p className="ggm-subtitle">Configura los mejores 5 clientes por concurrencia mensual para la pantalla de TV</p>
+                    </div>
+                </div>
+
+                {/* BARRA DE NAVEGACIÓN Y SELECCIÓN DE MES */}
+                <div className="ggm-period-bar">
+                    <button className="ggm-period-nav-btn" onClick={handlePrevMonth} title="Mes anterior">
+                        ◀
+                    </button>
+                    <div className="ggm-period-display">
+                        <span className="ggm-period-label">MES PREMIADO</span>
+                        <div className="ggm-period-value">
+                            <span className="ggm-period-month">{selectedMonthName}</span>
+                            <span className="ggm-period-year">{selectedPeriod.year}</span>
+                        </div>
+                    </div>
+                    <button className="ggm-period-nav-btn" onClick={handleNextMonth} title="Mes siguiente">
+                        ▶
+                    </button>
+                    <div className="ggm-quick-shortcuts">
+                        <button
+                            className={`ggm-quick-btn ${selectedPeriod.year === prevYearNumber && selectedPeriod.month === prevMonthNumber ? 'active' : ''}`}
+                            onClick={handleSelectPrevClosedMonth}
+                            title="Ir al mes cerrado que acaba de terminar"
+                        >
+                            🏅 {MESES_LIST[prevMonthNumber - 1]} (Recién cerrado)
+                        </button>
+                        <button
+                            className={`ggm-quick-btn ${selectedPeriod.year === curPeruYear && selectedPeriod.month === curPeruMonth ? 'active' : ''}`}
+                            onClick={handleSelectCurrentMonth}
+                            title="Ir al mes en curso"
+                        >
+                            📅 {MESES_LIST[curPeruMonth - 1]} (En curso)
+                        </button>
+                    </div>
                 </div>
             </div>
+
+            {loadingDb && (
+                <div className="ggm-loading-banner">
+                    <span>⚡ Cargando ganadores de {selectedMonthName} {selectedPeriod.year}...</span>
+                </div>
+            )}
 
             <div className="ggm-cards-container" ref={searchRef}>
                 {ganadores.map(item => {
@@ -447,7 +524,7 @@ const GestorGanadoresMensuales = () => {
                                     <span className="ggm-label">PUNTOS GANADOS</span>
                                     <input
                                         className="ggm-points-input"
-                                        type="text" // uses text but validated to be numbers
+                                        type="text"
                                         value={item.puntos}
                                         onChange={(e) => handlePointsChange(pos, e.target.value)}
                                         placeholder="0"
@@ -464,7 +541,10 @@ const GestorGanadoresMensuales = () => {
             <div className="ggm-historical-section">
                 <div className="ggm-historical-header">
                     <span className="ggm-historical-icon">📚</span>
-                    <h3 className="ggm-historical-title">Historial de Meses Anteriores</h3>
+                    <div>
+                        <h3 className="ggm-historical-title">Historial de Meses Registrados</h3>
+                        <p className="ggm-historical-sub">Consulta o carga en el editor cualquier mes pasado o presente</p>
+                    </div>
                 </div>
 
                 {loadingHistorial ? (
@@ -476,7 +556,7 @@ const GestorGanadoresMensuales = () => {
                 ) : (
                     <div className="ggm-years-list">
                         {Object.keys(historialAgrupado)
-                            .sort((a, b) => b - a) // Descending years
+                            .sort((a, b) => b - a)
                             .map(year => (
                                 <div key={year} className={`ggm-year-block ${expandedYears[year] ? 'expanded' : ''}`}>
                                     <div className="ggm-year-bar" onClick={() => toggleYear(year)}>
@@ -487,12 +567,25 @@ const GestorGanadoresMensuales = () => {
                                     {expandedYears[year] && (
                                         <div className="ggm-months-grid">
                                             {Object.keys(historialAgrupado[year])
-                                                .sort((a, b) => b - a) // Descending months
+                                                .sort((a, b) => b - a)
                                                 .map(month => {
                                                     const ganadoresMes = historialAgrupado[year][month]
+                                                    const isCurrentlyLoaded = Number(year) === selectedPeriod.year && (Number(month) + 1) === selectedPeriod.month
                                                     return (
-                                                        <div key={`${year}-${month}`} className="ggm-month-card">
-                                                            <div className="ggm-month-title">{getMonthName(Number(month))}</div>
+                                                        <div key={`${year}-${month}`} className={`ggm-month-card ${isCurrentlyLoaded ? 'is-active-card' : ''}`}>
+                                                            <div className="ggm-month-card-top">
+                                                                <div className="ggm-month-title">
+                                                                    {getMonthName(Number(month))}
+                                                                    {isCurrentlyLoaded && <span className="ggm-active-chip">Activo en Editor</span>}
+                                                                </div>
+                                                                <button
+                                                                    className="ggm-load-month-btn"
+                                                                    onClick={() => loadHistoricalMonth(year, month)}
+                                                                    title="Cargar este mes en las tarjetas superiores para editarlo"
+                                                                >
+                                                                    ✏️ Editar
+                                                                </button>
+                                                            </div>
                                                             <div className="ggm-month-winners-list">
                                                                 {ganadoresMes.map(g => (
                                                                     <div key={g.posicion} className={`ggm-hist-winner pos-${g.posicion}`}>
@@ -521,10 +614,15 @@ const GestorGanadoresMensuales = () => {
             {confirmDialogPos !== null && (
                 <div className="ggm-overlay" onClick={() => !saving && setConfirmDialogPos(null)}>
                     <div className="ggm-dialog" onClick={e => e.stopPropagation()}>
-                        <div className="ggm-dialog-icon">✏️</div>
+                        <div className="ggm-dialog-icon">💾</div>
                         <h3 className="ggm-dialog-title">Confirmar {confirmDialogPos}º Lugar</h3>
                         <div className="ggm-dialog-body">
-                            <p>¿Estás seguro de que deseas guardar los cambios realizados para el <strong>{confirmDialogPos}º Lugar</strong> de este mes?</p>
+                            <p>
+                                ¿Deseas guardar los cambios para el <strong>{confirmDialogPos}º Lugar</strong> del mes de <strong>{selectedMonthName} {selectedPeriod.year}</strong>?
+                            </p>
+                            <p style={{ fontSize: '0.82rem', color: '#00e5ff', marginTop: '6px' }}>
+                                Se actualizará automáticamente en la pantalla de TV.
+                            </p>
                         </div>
                         <div className="ggm-dialog-actions">
                             <button className="ggm-btn-cancel" onClick={() => setConfirmDialogPos(null)} disabled={saving}>Cancelar</button>

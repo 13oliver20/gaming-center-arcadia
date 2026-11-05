@@ -229,115 +229,352 @@
     text-shadow: 0 0 5px rgba(255, 255, 255, 0.3);
 }
 
-/* MENSUALES ESPECÍFICO */
-.gsd-mensual-accent {
-    width: 4px;
-    background: #ff00aa;
-    /* Default */
-    flex-shrink: 0;
+/* ========================================================
+   VISTA MENSUAL - SALÓN DE LA FAMA (PODIUM ESPORTS)
+   ======================================================== */
+.gsd-mensuales-view {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
 }
 
-.gsd-mensual-pos {
-    color: #ff00aa;
-    /* Default */
-    font-size: 0.70rem;
+.gsd-mensual-header {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: 6px;
+}
+
+.gsd-hall-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.68rem;
     font-weight: 800;
     letter-spacing: 1.5px;
-    margin-bottom: 2px;
+    text-transform: uppercase;
+    color: #ffd700;
+    background: rgba(255, 215, 0, 0.1);
+    border: 1px solid rgba(255, 215, 0, 0.3);
+    padding: 3px 10px;
+    border-radius: 20px;
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.15);
 }
 
-.gsd-mensual-puntos {
+.gsd-mensual-title {
+    color: #ffffff;
+    font-size: 1.05rem;
+    font-weight: 800;
+    letter-spacing: 1px;
+    margin: 4px 0 0 0;
+}
+
+.gsd-month-highlight {
+    color: #00e5ff;
+    text-shadow: 0 0 10px rgba(0, 229, 255, 0.6);
+}
+
+.gsd-mensual-sub {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin: 0;
+}
+
+.gsd-podium-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.gsd-podium-card {
+    position: relative;
+    display: flex;
+    align-items: center;
+    background: linear-gradient(135deg, rgba(20, 25, 38, 0.95) 0%, rgba(12, 16, 26, 0.98) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    padding: 8px 12px 8px 0;
+    overflow: hidden;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.gsd-podium-card + .gsd-podium-card {
+    margin-top: 8px;
+}
+
+.gsd-podium-card:hover {
+    transform: translateX(3px);
+}
+
+.gpc-accent-bar {
+    width: 4px;
+    align-self: stretch;
+    flex-shrink: 0;
+    margin-right: 10px;
+}
+
+.gpc-badge {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    background: rgba(255, 255, 255, 0.05);
-    padding: 6px 10px;
+    min-width: 38px;
+    padding-right: 8px;
+    flex-shrink: 0;
+}
+
+.gpc-medal {
+    font-size: 1.15rem;
+    line-height: 1;
+}
+
+.gpc-rank {
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    margin-top: 2px;
+}
+
+.gpc-player-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.gpc-nick {
+    font-size: 0.92rem;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    color: #ffffff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-shadow: 0 0 6px rgba(255, 255, 255, 0.2);
+}
+
+.gpc-realname {
+    font-size: 0.70rem;
+    color: rgba(255, 255, 255, 0.55);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-transform: capitalize;
+    margin-top: 1px;
+}
+
+.gpc-waiting {
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.35);
+    font-style: italic;
+}
+
+.gpc-right-badge {
+    flex-shrink: 0;
+    margin-left: 8px;
+}
+
+/* Puntos pill */
+.gpc-pts-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.4);
     border-radius: 6px;
+    padding: 4px 8px;
+    min-width: 52px;
     border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.gsd-pts-val {
-    font-size: 1.2rem;
-    font-weight: 800;
-    color: #ffd700;
-    /* Default matches gold but overrides below */
+.gpc-pts-val {
+    font-size: 1.05rem;
+    font-weight: 900;
+    line-height: 1.1;
+    font-family: 'Inter', monospace;
 }
 
-.gsd-pts-lbl {
-    font-size: 0.6rem;
-    color: rgba(255, 255, 255, 0.5);
+.gpc-pts-lbl {
+    font-size: 0.58rem;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.45);
     letter-spacing: 1px;
 }
 
-/* COLORES POR POSICIÓN MENSUAL (SIMILAR AL ADMIN) */
-/* 1ro - Oro */
-.pos-1 .gsd-mensual-accent {
+/* Honor badge for Top 4 & Top 5 */
+.gpc-honor-badge {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(168, 85, 247, 0.15);
+    border: 1px solid rgba(168, 85, 247, 0.35);
+    padding: 5px 8px;
+    border-radius: 6px;
+    box-shadow: 0 0 8px rgba(168, 85, 247, 0.2);
+}
+
+.gpc-honor-star {
+    font-size: 0.75rem;
+}
+
+.gpc-honor-text {
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 1px;
+    color: #c084fc;
+}
+
+/* Footer Motivacional */
+.gsd-mensual-footer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background: linear-gradient(90deg, rgba(255, 0, 170, 0.08) 0%, rgba(0, 229, 255, 0.08) 100%);
+    border: 1px dashed rgba(255, 255, 255, 0.15);
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-size: 0.70rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.75);
+    text-align: center;
+    margin-top: 4px;
+}
+
+.gsd-footer-icon {
+    font-size: 0.85rem;
+    color: #ffd700;
+}
+
+/* ========================================================
+   ESTILOS TEMÁTICOS POR PUESTO (PODIUM)
+   ======================================================== */
+
+/* 1º LUGAR - CAMPEÓN ORO */
+.podium-pos-1 {
+    background: linear-gradient(135deg, rgba(45, 35, 10, 0.95) 0%, rgba(20, 16, 5, 0.98) 100%);
+    border-color: rgba(255, 215, 0, 0.4);
+    box-shadow: 0 4px 15px rgba(255, 215, 0, 0.12), inset 0 0 15px rgba(255, 215, 0, 0.05);
+}
+
+.podium-pos-1 .gpc-accent-bar {
     background: #ffd700;
-    box-shadow: 0 0 8px #ffd700;
+    box-shadow: 0 0 10px #ffd700;
 }
 
-.pos-1 .gsd-mensual-pos {
+.podium-pos-1 .gpc-rank {
     color: #ffd700;
 }
 
-.pos-1 .gsd-pts-val {
+.podium-pos-1 .gpc-nick {
+    color: #ffe066;
+    text-shadow: 0 0 8px rgba(255, 215, 0, 0.4);
+}
+
+.podium-pos-1 .gpc-pts-box {
+    border-color: rgba(255, 215, 0, 0.35);
+    background: rgba(255, 215, 0, 0.12);
+}
+
+.podium-pos-1 .gpc-pts-val {
     color: #ffd700;
+    text-shadow: 0 0 8px rgba(255, 215, 0, 0.5);
 }
 
-.pos-1 {
-    border-color: rgba(255, 215, 0, 0.2);
+/* 2º LUGAR - PLATA CYBER */
+.podium-pos-2 {
+    background: linear-gradient(135deg, rgba(30, 35, 45, 0.95) 0%, rgba(15, 18, 25, 0.98) 100%);
+    border-color: rgba(200, 215, 230, 0.35);
+    box-shadow: 0 4px 12px rgba(200, 215, 230, 0.08);
 }
 
-/* 2do - Plata */
-.pos-2 .gsd-mensual-accent {
-    background: #c0c0c0;
-    box-shadow: 0 0 8px #c0c0c0;
+.podium-pos-2 .gpc-accent-bar {
+    background: #d1d5db;
+    box-shadow: 0 0 8px rgba(209, 213, 219, 0.7);
 }
 
-.pos-2 .gsd-mensual-pos {
-    color: #c0c0c0;
+.podium-pos-2 .gpc-rank {
+    color: #e5e7eb;
 }
 
-.pos-2 .gsd-pts-val {
-    color: #c0c0c0;
+.podium-pos-2 .gpc-nick {
+    color: #f3f4f6;
 }
 
-.pos-2 {
-    border-color: rgba(192, 192, 192, 0.2);
+.podium-pos-2 .gpc-pts-box {
+    border-color: rgba(209, 213, 219, 0.3);
+    background: rgba(255, 255, 255, 0.08);
 }
 
-/* 3ro - Bronce */
-.pos-3 .gsd-mensual-accent {
+.podium-pos-2 .gpc-pts-val {
+    color: #e5e7eb;
+}
+
+/* 3º LUGAR - BRONCE FUEGO */
+.podium-pos-3 {
+    background: linear-gradient(135deg, rgba(40, 26, 18, 0.95) 0%, rgba(20, 14, 10, 0.98) 100%);
+    border-color: rgba(205, 127, 50, 0.35);
+    box-shadow: 0 4px 12px rgba(205, 127, 50, 0.08);
+}
+
+.podium-pos-3 .gpc-accent-bar {
     background: #cd7f32;
-    box-shadow: 0 0 8px #cd7f32;
+    box-shadow: 0 0 8px rgba(205, 127, 50, 0.7);
 }
 
-.pos-3 .gsd-mensual-pos {
-    color: #cd7f32;
+.podium-pos-3 .gpc-rank {
+    color: #f97316;
 }
 
-.pos-3 .gsd-pts-val {
-    color: #cd7f32;
+.podium-pos-3 .gpc-nick {
+    color: #fed7aa;
 }
 
-.pos-3 {
-    border-color: rgba(205, 127, 50, 0.2);
+.podium-pos-3 .gpc-pts-box {
+    border-color: rgba(205, 127, 50, 0.3);
+    background: rgba(205, 127, 50, 0.12);
 }
 
-/* 4to y 5to - Rojo/Naranja */
-.pos-4 .gsd-mensual-accent,
-.pos-5 .gsd-mensual-accent {
-    background: #ff5e5e;
-    box-shadow: 0 0 8px #ff5e5e;
+.podium-pos-3 .gpc-pts-val {
+    color: #fb923c;
 }
 
-.pos-4 .gsd-mensual-pos,
-.pos-5 .gsd-mensual-pos {
-    color: #ff5e5e;
+/* 4º Y 5º LUGAR - CYBER VIOLET & TOP 5 HONOR */
+.podium-pos-4,
+.podium-pos-5 {
+    background: linear-gradient(135deg, rgba(28, 20, 42, 0.95) 0%, rgba(14, 10, 22, 0.98) 100%);
+    border-color: rgba(168, 85, 247, 0.25);
 }
 
-.pos-4,
-.pos-5 {
-    border-color: rgba(255, 94, 94, 0.2);
+.podium-pos-4 .gpc-accent-bar,
+.podium-pos-5 .gpc-accent-bar {
+    background: #a855f7;
+    box-shadow: 0 0 8px rgba(168, 85, 247, 0.6);
+}
+
+.podium-pos-4 .gpc-rank,
+.podium-pos-5 .gpc-rank {
+    color: #c084fc;
+}
+
+.podium-pos-4 .gpc-nick,
+.podium-pos-5 .gpc-nick {
+    color: #f3e8ff;
+}
+
+.podium-pos-4 .gpc-pts-box,
+.podium-pos-5 .gpc-pts-box {
+    border-color: rgba(168, 85, 247, 0.3);
+    background: rgba(168, 85, 247, 0.12);
+}
+
+.podium-pos-4 .gpc-pts-val,
+.podium-pos-5 .gpc-pts-val {
+    color: #c084fc;
 }

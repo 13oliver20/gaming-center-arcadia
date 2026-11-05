@@ -73,9 +73,19 @@ export const getPeruDayChar = (date = new Date()) => {
  * Retorna el rango exacto de inicio y fin del mes en Perú (GMT-5).
  * - startIso: 1er día del mes a las 00:00:00.000 Lima (05:00:00 UTC)
  * - endIso: Último día del mes a las 23:59:59.999 Lima (04:59:59.999 UTC del 1er día del siguiente mes)
+ * Acepta un objeto Date o un año y mes específico (1-12).
  */
-export const getPeruMonthRange = (date = new Date()) => {
-    const { year, month } = getPeruDateParts(date)
+export const getPeruMonthRange = (dateOrYear = new Date(), optionalMonth = null) => {
+    let year, month
+    if (typeof dateOrYear === 'number' && optionalMonth !== null) {
+        year = dateOrYear
+        month = optionalMonth
+    } else {
+        const parts = getPeruDateParts(dateOrYear)
+        year = parts.year
+        month = parts.month
+    }
+
     // 00:00:00 Lima = 05:00:00 UTC
     const startIso = new Date(Date.UTC(year, month - 1, 1, 5, 0, 0, 0)).toISOString()
     const nextMonthYear = month === 12 ? year + 1 : year
@@ -90,6 +100,17 @@ export const getPeruMonthRange = (date = new Date()) => {
         month,
         monthName: MESES[month - 1]
     }
+}
+
+/**
+ * Retorna la fecha ISO recomendada para guardar un registro perteneciente al mes y año indicados
+ * (último día del mes a las 23:59:00 hora Perú, equivalente a 04:59:00 UTC del día siguiente).
+ */
+export const getPeruMonthTargetDate = (year, month) => {
+    // Tomar día 28 a 31 según el mes
+    const lastDayOfMonth = new Date(Date.UTC(year, month, 0)).getUTCDate()
+    // 23:59:00 Lima = día siguiente 04:59:00 UTC
+    return new Date(Date.UTC(year, month - 1, lastDayOfMonth, 23, 59, 0, 0)).toISOString()
 }
 
 /**

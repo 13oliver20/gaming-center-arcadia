@@ -8,22 +8,154 @@
 
 .ggm-header {
     display: flex;
+    justify-content: space-between;
     align-items: center;
-    gap: 12px;
-    margin-bottom: 30px;
-    padding-bottom: 12px;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
+.ggm-header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
 .ggm-header-icon {
-    font-size: 2rem;
+    font-size: 2.2rem;
 }
 
 .ggm-title {
     margin: 0;
-    font-size: 1.5rem;
-    font-weight: 600;
+    font-size: 1.4rem;
+    font-weight: 700;
     letter-spacing: 0.5px;
+    color: #fff;
+}
+
+.ggm-subtitle {
+    margin: 4px 0 0 0;
+    font-size: 0.82rem;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+/* BARRA DE NAVEGACIÓN DE MES */
+.ggm-period-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(20, 26, 38, 0.85);
+    border: 1px solid rgba(0, 229, 255, 0.3);
+    padding: 6px 12px;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    flex-wrap: wrap;
+}
+
+.ggm-period-nav-btn {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #00e5ff;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all 0.2s ease;
+}
+
+.ggm-period-nav-btn:hover {
+    background: rgba(0, 229, 255, 0.2);
+    border-color: #00e5ff;
+    transform: scale(1.05);
+}
+
+.ggm-period-display {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 140px;
+    padding: 0 6px;
+}
+
+.ggm-period-label {
+    font-size: 0.65rem;
+    font-weight: 800;
+    letter-spacing: 1px;
+    color: rgba(255, 255, 255, 0.45);
+    text-transform: uppercase;
+}
+
+.ggm-period-value {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+}
+
+.ggm-period-month {
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: #00e5ff;
+    text-shadow: 0 0 10px rgba(0, 229, 255, 0.4);
+    text-transform: uppercase;
+}
+
+.ggm-period-year {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.ggm-quick-shortcuts {
+    display: flex;
+    gap: 6px;
+    margin-left: 8px;
+    border-left: 1px solid rgba(255, 255, 255, 0.1);
+    padding-left: 10px;
+}
+
+.ggm-quick-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.7);
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.ggm-quick-btn:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+}
+
+.ggm-quick-btn.active {
+    background: rgba(0, 229, 255, 0.18);
+    border-color: #00e5ff;
+    color: #00e5ff;
+    box-shadow: 0 0 8px rgba(0, 229, 255, 0.25);
+}
+
+.ggm-loading-banner {
+    background: rgba(0, 229, 255, 0.1);
+    border: 1px solid rgba(0, 229, 255, 0.3);
+    color: #00e5ff;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 20px;
+    text-align: center;
+    animation: fadeIn 0.3s ease;
 }
 
 /* CARDS CONTAINER */
@@ -466,6 +598,12 @@
     color: #a78bfa;
 }
 
+.ggm-historical-sub {
+    margin: 4px 0 0 0;
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.45);
+}
+
 .ggm-empty-historial {
     background: rgba(255, 255, 255, 0.03);
     border: 1px dashed rgba(255, 255, 255, 0.1);
@@ -529,17 +667,63 @@
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 6px;
     padding: 16px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.ggm-month-card.is-active-card {
+    border-color: #00e5ff;
+    box-shadow: 0 0 15px rgba(0, 229, 255, 0.15);
+}
+
+.ggm-month-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .ggm-month-title {
-    font-size: 1.1rem;
+    font-size: 1.05rem;
     font-weight: 700;
     color: #00c8ff;
-    margin-bottom: 15px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     text-transform: uppercase;
     letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.ggm-active-chip {
+    font-size: 0.65rem;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: rgba(0, 229, 255, 0.2);
+    border: 1px solid #00e5ff;
+    color: #00e5ff;
+    letter-spacing: 0.5px;
+}
+
+.ggm-load-month-btn {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #fff;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.ggm-load-month-btn:hover {
+    background: #00e5ff;
+    color: #000;
+    border-color: #00e5ff;
 }
 
 .ggm-month-winners-list {

@@ -5,6 +5,7 @@ import {
     getPeruDateStr,
     getPeruFormattedDate,
     getPeruDayChar,
+    getPeruDateParts,
     getPeruMonthRange
 } from '../utils/peruTime'
 
@@ -24,6 +25,13 @@ const GestorSorteosDisplay = ({ onLoaded }) => {
     const [horarios, setHorarios] = useState([])
     const [todayWinners, setTodayWinners] = useState({})
     const [monthlyWinners, setMonthlyWinners] = useState([])
+    const [monthlyPeriod, setMonthlyPeriod] = useState(() => {
+        // Por defecto tomar el mes anterior cerrado o el mes actual
+        const now = new Date()
+        const prev = new Date(now.getFullYear(), now.getMonth() - 1, 15)
+        const range = getPeruMonthRange(prev)
+        return { monthName: range.monthName, year: range.year }
+    })
     const [activeTab, setActiveTab] = useState('diarios')
     const [beneficioTexto, setBeneficioTexto] = useState('')
     const [showBeneficios, setShowBeneficios] = useState(false)
@@ -39,16 +47,19 @@ const GestorSorteosDisplay = ({ onLoaded }) => {
 
     const fetchData = async () => {
         try {
-            // Fecha y rango de mes actual en Perú (GMT-5)
+            // Fecha actual en Perú (GMT-5)
             const currentTodayStr = getPeruDateStr()
-            const { startIso, endIso } = getPeruMonthRange()
 
             // Consultas en paralelo para optimizar velocidad y minimizar conexiones simultáneas
             const [cRes, hRes, histRes, mRes, bRes, lRes] = await Promise.all([
                 supabase.from('sorteos_configuracion').select('*').eq('id', '00000000-0000-0000-0000-000000000001').single(),
                 supabase.from('sorteos_horarios').select('*').order('orden', { ascending: true }),
                 supabase.from('sorteos_historial').select('*').eq('fecha', currentTodayStr).order('created_at', { ascending: true }),
-                supabase.from('ganadores_mensuales').select('posicion, puntos, usuario_id, usuarios ( id, nickname, nombre_real )').gte('created_at', startIso).lte('created_at', endIso).order('posicion', { ascending: true }),
+                // Obtenemos los ganadores ordenados por fecha descendente para detectar automáticamente el último mes premiado
+                supabase.from('ganadores_mensuales')
+                    .select('posicion, puntos, created_at, usuario_id, usuarios ( id, nickname, nombre_real )')
+                    .order('created_at', { ascending: false })
+                    .order('posicion', { ascending: true }),
                 supabase.from('beneficios_cliente').select('texto').limit(1).single(),
                 supabase.from('display_sorteos_layout').select('*').eq('id', SORTEOS_LAYOUT_ID).single()
             ])
@@ -76,8 +87,25 @@ const GestorSorteosDisplay = ({ onLoaded }) => {
                 setTodayWinners({})
             }
 
-            if (mRes.data) {
-                setMonthlyWinners(mRes.data)
+            // Procesar el último mes premiado disponible
+            if (mRes.data && mRes.data.length > 0) {
+                // El primer registro tiene la fecha del mes premiado más reciente
+                const latestDate = new Date(mRes.data[0].created_at)
+                const latestParts = getPeruDateParts(latestDate)
+                const latestRange = getPeruMonthRange(latestDate)
+
+                setMonthlyPeriod({
+                    monthName: latestRange.monthName,
+                    year: latestParts.year
+                })
+
+                // Filtrar solo los registros que pertenezcan a ese mes y año premiados
+                const filteredWinners = mRes.data.filter(item => {
+                    const parts = getPeruDateParts(new Date(item.created_at))
+                    return parts.year === latestParts.year && parts.month === latestParts.month
+                })
+
+                setMonthlyWinners(filteredWinners)
             } else {
                 setMonthlyWinners([])
             }
@@ -276,33 +304,60 @@ const GestorSorteosDisplay = ({ onLoaded }) => {
                     )}
                     {activeTab === 'mensuales' && (
                         <div className="gsd-mensuales-view">
-                            <h3 className="gsd-title">MEJORES DEL MES</h3>
-                            <p className="gsd-date">TOP 5</p>
-                            <div className="gsd-horarios-list">
+                            <div className="gsd-mensual-header">
+                                <span className="gsd-hall-badge">🏆 SALÓN DE LA FAMA</span>
+                                <h3 className="gsd-title gsd-mensual-title">
+                                    GANADORES DE <span className="gsd-month-highlight">{monthlyPeriod.monthName.toUpperCase()}</span>
+                                </h3>
+                                <p className="gsd-date gsd-mensual-sub">TOP 5 · CONCURRENCIA ARCADIA</p>
+                            </div>
+                            <div className="gsd-podium-list">
                                 {[1, 2, 3, 4, 5].map(pos => {
                                     const winner = monthlyWinners.find(w => w.posicion === pos)
+                                    const isChampion = pos === 1
                                     return (
-                                        <div key={pos} className={`gsd-horario-card pos-${pos}`}>
-                                            <div className="gsd-mensual-accent"></div>
-                                            <div className="gsd-horario-content" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                <div>
-                                                    <div className="gsd-mensual-pos">{pos}º LUGAR</div>
-                                                    {winner && winner.usuarios ? (
-                                                        <div className="gsd-winner-name">@{winner.usuarios.nickname?.toUpperCase() || 'USUARIO'}</div>
-                                                    ) : (
-                                                        <div className="gsd-winner-waiting" style={{ color: '#8c96a3', marginTop: '4px', fontSize: '1rem' }}>Esperando resultados...</div>
-                                                    )}
-                                                </div>
-                                                {winner && winner.puntos && (
-                                                    <div className="gsd-mensual-puntos">
-                                                        <span className="gsd-pts-val">{winner.puntos}</span>
-                                                        <span className="gsd-pts-lbl">PTS</span>
+                                        <div key={pos} className={`gsd-podium-card podium-pos-${pos} ${isChampion ? 'champion' : ''}`}>
+                                            <div className="gpc-accent-bar"></div>
+                                            <div className="gpc-badge">
+                                                {pos === 1 && <span className="gpc-medal">👑</span>}
+                                                {pos === 2 && <span className="gpc-medal">🥈</span>}
+                                                {pos === 3 && <span className="gpc-medal">🥉</span>}
+                                                {pos === 4 && <span className="gpc-medal">🎖️</span>}
+                                                {pos === 5 && <span className="gpc-medal">🎖️</span>}
+                                                <span className="gpc-rank">{pos}º</span>
+                                            </div>
+                                            <div className="gpc-player-info">
+                                                {winner && winner.usuarios ? (
+                                                    <>
+                                                        <div className="gpc-nick">@{winner.usuarios.nickname?.toUpperCase()}</div>
+                                                        {winner.usuarios.nombre_real && (
+                                                            <div className="gpc-realname">{winner.usuarios.nombre_real}</div>
+                                                        )}
+                                                    </>
+                                                ) : (
+                                                    <div className="gpc-waiting">Esperando ganador...</div>
+                                                )}
+                                            </div>
+                                            <div className="gpc-right-badge">
+                                                {winner && winner.puntos ? (
+                                                    <div className="gpc-pts-box">
+                                                        <span className="gpc-pts-val">{winner.puntos}</span>
+                                                        <span className="gpc-pts-lbl">PTS</span>
+                                                    </div>
+                                                ) : (
+                                                    <div className="gpc-honor-badge">
+                                                        <span className="gpc-honor-star">⭐</span>
+                                                        <span className="gpc-honor-text">TOP 5</span>
                                                     </div>
                                                 )}
                                             </div>
                                         </div>
                                     )
                                 })}
+                            </div>
+                            <div className="gsd-mensual-footer">
+                                <span className="gsd-footer-icon">⚡</span>
+                                <span>¡Acumula horas en Arcadia y entra al Salón de la Fama!</span>
                             </div>
                         </div>
                     )}
