@@ -177,14 +177,295 @@
     margin: 5px 0 20px 0;
 }
 
-.gsd-horarios-list {
+/* ========================================================
+   VISTA DIARIA - SORTEOS EN VIVO (ESPORTS PREMIUM)
+   ======================================================== */
+.gsd-diarios-view {
     display: flex;
     flex-direction: column;
     gap: 12px;
 }
 
-.gsd-horario-card + .gsd-horario-card {
-    margin-top: 12px;
+.gsd-diario-header {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: 6px;
+}
+
+.gsd-raffle-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: #ff00aa;
+    background: rgba(255, 0, 170, 0.12);
+    border: 1px solid rgba(255, 0, 170, 0.35);
+    padding: 3px 12px;
+    border-radius: 20px;
+    box-shadow: 0 0 12px rgba(255, 0, 170, 0.25);
+}
+
+.gsd-diario-title {
+    color: #ffffff;
+    font-size: 1.05rem;
+    font-weight: 800;
+    letter-spacing: 1px;
+    margin: 4px 0 0 0;
+}
+
+.gsd-highlight-pink {
+    color: #ff00aa;
+    text-shadow: 0 0 10px rgba(255, 0, 170, 0.7);
+}
+
+.gsd-diario-sub {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin: 0;
+}
+
+.gsd-diarios-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.gsd-diario-card {
+    position: relative;
+    display: flex;
+    align-items: center;
+    background: linear-gradient(135deg, rgba(20, 25, 38, 0.95) 0%, rgba(12, 16, 26, 0.98) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    padding: 10px 12px 10px 0;
+    min-height: 48px;
+    overflow: hidden;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.gsd-diario-card + .gsd-diario-card {
+    margin-top: 8px;
+}
+
+.gsd-diario-card:hover {
+    transform: translateX(3px);
+}
+
+.gsd-diario-card.has-winner {
+    border-color: rgba(0, 255, 136, 0.3);
+    background: linear-gradient(135deg, rgba(14, 32, 28, 0.95) 0%, rgba(10, 18, 22, 0.98) 100%);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3), 0 0 15px rgba(0, 255, 136, 0.08);
+}
+
+.gsd-diario-card.is-waiting {
+    border-color: rgba(255, 0, 170, 0.25);
+}
+
+.gdc-accent-bar {
+    width: 4px;
+    align-self: stretch;
+    flex-shrink: 0;
+    margin-right: 10px;
+    background: #ff00aa;
+    box-shadow: 0 0 10px rgba(255, 0, 170, 0.6);
+}
+
+.has-winner .gdc-accent-bar {
+    background: #00ff88;
+    box-shadow: 0 0 10px rgba(0, 255, 136, 0.7);
+}
+
+.accent-cyan {
+    background: #00e5ff !important;
+    box-shadow: 0 0 10px rgba(0, 229, 255, 0.6) !important;
+}
+
+.gdc-badge {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 42px;
+    padding-right: 8px;
+    flex-shrink: 0;
+}
+
+.gdc-icon {
+    font-size: 1.15rem;
+    line-height: 1;
+}
+
+.gdc-time-tag {
+    font-size: 0.62rem;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    margin-top: 3px;
+    color: #ff00aa;
+    white-space: nowrap;
+}
+
+.has-winner .gdc-time-tag {
+    color: #00ff88;
+}
+
+.gdc-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.gdc-nick {
+    font-size: 0.98rem;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    color: #ffffff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-shadow: 0 0 6px rgba(255, 255, 255, 0.2);
+}
+
+.has-winner .gdc-nick {
+    color: #00ff88;
+    text-shadow: 0 0 8px rgba(0, 255, 136, 0.4);
+}
+
+.gdc-title {
+    font-size: 0.85rem;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.gdc-sub {
+    font-size: 0.68rem;
+    color: rgba(255, 255, 255, 0.55);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-top: 2px;
+}
+
+.gdc-waiting {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.76rem;
+    color: rgba(255, 255, 255, 0.45);
+    font-style: italic;
+    margin-top: 2px;
+}
+
+.gdc-pulse-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #ff00aa;
+    box-shadow: 0 0 6px #ff00aa;
+    animation: gdcPulse 1.8s infinite;
+}
+
+@keyframes gdcPulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.3; transform: scale(0.85); }
+}
+
+.gdc-right-badge {
+    flex-shrink: 0;
+    margin-left: 8px;
+}
+
+/* Caja de Premio */
+.gdc-prize-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.45);
+    border-radius: 6px;
+    padding: 4px 8px;
+    min-width: 58px;
+    border: 1px solid rgba(0, 255, 136, 0.35);
+    box-shadow: 0 0 10px rgba(0, 255, 136, 0.15);
+}
+
+.gdc-prize-val {
+    font-size: 0.82rem;
+    font-weight: 900;
+    color: #00ff88;
+    line-height: 1.1;
+    white-space: nowrap;
+}
+
+.gdc-prize-lbl {
+    font-size: 0.55rem;
+    font-weight: 800;
+    color: rgba(255, 255, 255, 0.5);
+    letter-spacing: 1px;
+}
+
+/* Badge de Estado en Espera */
+.gdc-status-badge {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(255, 0, 170, 0.12);
+    border: 1px solid rgba(255, 0, 170, 0.3);
+    padding: 5px 8px;
+    border-radius: 6px;
+    box-shadow: 0 0 8px rgba(255, 0, 170, 0.15);
+}
+
+.status-cyan {
+    background: rgba(0, 229, 255, 0.12) !important;
+    border-color: rgba(0, 229, 255, 0.3) !important;
+    box-shadow: 0 0 8px rgba(0, 229, 255, 0.15) !important;
+}
+
+.gdc-status-icon {
+    font-size: 0.75rem;
+}
+
+.gdc-status-text {
+    font-size: 0.66rem;
+    font-weight: 800;
+    letter-spacing: 1px;
+    color: #ff00aa;
+}
+
+/* Footer Motivacional Diarios */
+.gsd-diario-footer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background: linear-gradient(90deg, rgba(255, 0, 170, 0.1) 0%, rgba(0, 229, 255, 0.1) 100%);
+    border: 1px dashed rgba(255, 255, 255, 0.18);
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-size: 0.70rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.8);
+    text-align: center;
+    margin-top: 4px;
+}
+
+/* Compatibilidad con clases antiguas */
+.gsd-horarios-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
 }
 
 .gsd-horario-card {

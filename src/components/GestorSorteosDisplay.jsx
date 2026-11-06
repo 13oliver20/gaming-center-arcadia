@@ -80,7 +80,10 @@ const GestorSorteosDisplay = ({ onLoaded }) => {
                 }
                 const map = {}
                 histData.forEach(row => {
-                    map[row.sorteo_id] = userMap[row.usuario_id] || 'Ganador'
+                    map[row.sorteo_id] = {
+                        nickname: userMap[row.usuario_id] || 'Ganador',
+                        premio: row.premio || 'Premio'
+                    }
                 })
                 setTodayWinners(map)
             } else {
@@ -227,6 +230,24 @@ const GestorSorteosDisplay = ({ onLoaded }) => {
         }
     }, [])
 
+    const headerDate = React.useMemo(() => {
+        const parts = getPeruDateParts()
+        const DIAS_NOMBRES = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
+        const MESES_NOMBRES = [
+            'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+            'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+        ]
+        const dateObj = new Date(Date.UTC(parts.year, parts.month - 1, parts.day, 12, 0, 0))
+        const diaSemana = DIAS_NOMBRES[dateObj.getUTCDay()] || 'Hoy'
+        const mesNombre = MESES_NOMBRES[parts.month - 1] || 'Mes'
+        return {
+            diaSemana,
+            diaNum: String(parts.day).padStart(2, '0'),
+            mesNombre,
+            year: parts.year
+        }
+    }, [todayInfo.todayStr])
+
     const shouldDisplay = config?.dias_activos?.includes(todayInfo.todayChar)
     if (!shouldDisplay || !layoutLoaded) return null
 
@@ -275,30 +296,87 @@ const GestorSorteosDisplay = ({ onLoaded }) => {
                 <div className="gsd-body">
                     {activeTab === 'diarios' && (
                         <div className="gsd-diarios-view">
-                            <h3 className="gsd-title">GANADORES DEL DIA</h3>
-                            <p className="gsd-date">{todayInfo.formattedDate}</p>
-                            <div className="gsd-horarios-list">
-                                {horarios.map(h => {
-                                    const winnerName = todayWinners[h.id]
+                            <div className="gsd-diario-header">
+                                <span className="gsd-raffle-badge">🎁 SORTEOS EN VIVO</span>
+                                <h3 className="gsd-title gsd-diario-title">
+                                    GANADORES DE <span className="gsd-highlight-pink">HOY</span>
+                                </h3>
+                                <p className="gsd-date gsd-diario-sub">
+                                    {headerDate.diaSemana.toUpperCase()}, {headerDate.diaNum} DE {headerDate.mesNombre.toUpperCase()}
+                                </p>
+                            </div>
+
+                            <div className="gsd-diarios-list">
+                                {horarios.map((h, idx) => {
+                                    const winner = todayWinners[h.id]
+                                    const winnerNick = winner ? (typeof winner === 'object' ? winner.nickname : winner) : null
+                                    const winnerPrize = winner && typeof winner === 'object' && winner.premio ? winner.premio : 'Premio Sorpresa'
+                                    const hasWinner = Boolean(winnerNick)
+
                                     return (
-                                        <div key={h.id} className="gsd-horario-card">
-                                            <div className="gsd-horario-accent"></div>
-                                            <div className="gsd-horario-content">
-                                                {winnerName ? (
+                                        <div key={h.id} className={`gsd-diario-card ${hasWinner ? 'has-winner' : 'is-waiting'}`}>
+                                            <div className="gdc-accent-bar"></div>
+                                            <div className="gdc-badge">
+                                                <span className="gdc-icon">{hasWinner ? '🏆' : '⏰'}</span>
+                                                <span className="gdc-time-tag">{h.hora}</span>
+                                            </div>
+                                            <div className="gdc-info">
+                                                {hasWinner ? (
                                                     <>
-                                                        <div className="gsd-horario-time">GANADOR DEL SORTEO {h.hora.toUpperCase()}</div>
-                                                        <div className="gsd-winner-name">✅ {winnerName.toUpperCase()}</div>
+                                                        <div className="gdc-nick">@{winnerNick.toUpperCase()}</div>
+                                                        <div className="gdc-sub">Ganador del Sorteo {h.hora}</div>
                                                     </>
                                                 ) : (
                                                     <>
-                                                        <div className="gsd-horario-time">SORTEO {h.hora.toUpperCase()}</div>
-                                                        <div className="gsd-winner-waiting">Esperando resultados...</div>
+                                                        <div className="gdc-title">SORTEO {h.hora.toUpperCase()}</div>
+                                                        <div className="gdc-waiting">
+                                                            <span className="gdc-pulse-dot" />
+                                                            <span>Esperando resultados en vivo...</span>
+                                                        </div>
                                                     </>
+                                                )}
+                                            </div>
+                                            <div className="gdc-right-badge">
+                                                {hasWinner ? (
+                                                    <div className="gdc-prize-box">
+                                                        <span className="gdc-prize-val">{winnerPrize.toUpperCase()}</span>
+                                                        <span className="gdc-prize-lbl">PREMIO</span>
+                                                    </div>
+                                                ) : (
+                                                    <div className="gdc-status-badge">
+                                                        <span className="gdc-status-icon">🎲</span>
+                                                        <span className="gdc-status-text">EN SALA</span>
+                                                    </div>
                                                 )}
                                             </div>
                                         </div>
                                     )
                                 })}
+
+                                {/* TARJETA INFORMATIVA: REGLA DE PARTICIPACIÓN EN SALA */}
+                                <div className="gsd-diario-card gsd-diario-info-card">
+                                    <div className="gdc-accent-bar accent-cyan"></div>
+                                    <div className="gdc-badge">
+                                        <span className="gdc-icon">🎮</span>
+                                        <span className="gdc-time-tag" style={{ color: '#00e5ff' }}>LAN</span>
+                                    </div>
+                                    <div className="gdc-info">
+                                        <div className="gdc-nick" style={{ fontSize: '0.86rem' }}>PARTICIPACIÓN AUTOMÁTICA</div>
+                                        <div className="gdc-sub">Solo debes estar jugando en cabina</div>
+                                    </div>
+                                    <div className="gdc-right-badge">
+                                        <div className="gdc-status-badge status-cyan">
+                                            <span className="gdc-status-icon">⭐</span>
+                                            <span className="gdc-status-text" style={{ color: '#00e5ff' }}>ACTIVO</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* FOOTER MOTIVACIONAL IDÉNTICO AL MENSUAL */}
+                            <div className="gsd-diario-footer">
+                                <span className="gsd-footer-icon">⚡</span>
+                                <span>¡Inicia sesión en cabina y participa automáticamente!</span>
                             </div>
                         </div>
                     )}
