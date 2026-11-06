@@ -328,10 +328,12 @@ const GestorSorteosDisplay = ({ onLoaded }) => {
                                                     </>
                                                 ) : (
                                                     <>
-                                                        <div className="gdc-title">SORTEO {h.hora.toUpperCase()}</div>
+                                                        <div className="gdc-title">
+                                                            SORTEO&nbsp;{h.hora.toUpperCase().replace(/\s+/g, '\u00A0')}
+                                                        </div>
                                                         <div className="gdc-waiting">
                                                             <span className="gdc-pulse-dot" />
-                                                            <span>Esperando resultados en vivo...</span>
+                                                            <span>Esperando resultados...</span>
                                                         </div>
                                                     </>
                                                 )}
@@ -361,8 +363,8 @@ const GestorSorteosDisplay = ({ onLoaded }) => {
                                         <span className="gdc-time-tag" style={{ color: '#00e5ff' }}>LAN</span>
                                     </div>
                                     <div className="gdc-info">
-                                        <div className="gdc-nick" style={{ fontSize: '0.86rem' }}>PARTICIPACIÓN AUTOMÁTICA</div>
-                                        <div className="gdc-sub">Solo debes estar jugando en cabina</div>
+                                        <div className="gdc-info-title">PARTICIPACIÓN AUTOMÁTICA</div>
+                                        <div className="gdc-info-sub">Solo debes estar jugando en cabina</div>
                                     </div>
                                     <div className="gdc-right-badge">
                                         <div className="gdc-status-badge status-cyan">
