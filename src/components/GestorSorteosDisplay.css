@@ -337,8 +337,16 @@
 }
 
 .has-winner .gdc-nick {
+    font-size: 1.05rem;
     color: #00ff88;
     text-shadow: 0 0 8px rgba(0, 255, 136, 0.4);
+    letter-spacing: 0.8px;
+}
+
+.has-winner .gdc-sub {
+    font-size: 0.72rem;
+    color: rgba(255, 255, 255, 0.75);
+    margin-top: 2px;
 }
 
 .gdc-title {

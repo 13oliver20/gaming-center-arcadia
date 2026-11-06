@@ -310,7 +310,6 @@ const GestorSorteosDisplay = ({ onLoaded }) => {
                                 {horarios.map((h, idx) => {
                                     const winner = todayWinners[h.id]
                                     const winnerNick = winner ? (typeof winner === 'object' ? winner.nickname : winner) : null
-                                    const winnerPrize = winner && typeof winner === 'object' && winner.premio ? winner.premio : 'Premio Sorpresa'
                                     const hasWinner = Boolean(winnerNick)
 
                                     return (
@@ -338,19 +337,14 @@ const GestorSorteosDisplay = ({ onLoaded }) => {
                                                     </>
                                                 )}
                                             </div>
-                                            <div className="gdc-right-badge">
-                                                {hasWinner ? (
-                                                    <div className="gdc-prize-box">
-                                                        <span className="gdc-prize-val">{winnerPrize.toUpperCase()}</span>
-                                                        <span className="gdc-prize-lbl">PREMIO</span>
-                                                    </div>
-                                                ) : (
+                                            {!hasWinner && (
+                                                <div className="gdc-right-badge">
                                                     <div className="gdc-status-badge">
                                                         <span className="gdc-status-icon">🎲</span>
                                                         <span className="gdc-status-text">EN SALA</span>
                                                     </div>
-                                                )}
-                                            </div>
+                                                </div>
+                                            )}
                                         </div>
                                     )
                                 })}
