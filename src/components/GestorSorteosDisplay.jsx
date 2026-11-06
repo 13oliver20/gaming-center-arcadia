@@ -364,13 +364,7 @@ const GestorSorteosDisplay = ({ onLoaded }) => {
                                     </div>
                                     <div className="gdc-info">
                                         <div className="gdc-info-title">PARTICIPACIÓN AUTOMÁTICA</div>
-                                        <div className="gdc-info-sub">Solo debes estar jugando en cabina</div>
-                                    </div>
-                                    <div className="gdc-right-badge">
-                                        <div className="gdc-status-badge status-cyan">
-                                            <span className="gdc-status-icon">⭐</span>
-                                            <span className="gdc-status-text" style={{ color: '#00e5ff' }}>ACTIVO</span>
-                                        </div>
+                                        <div className="gdc-info-sub">Solo debes estar jugando en una PC</div>
                                     </div>
                                 </div>
                             </div>
@@ -378,7 +372,7 @@ const GestorSorteosDisplay = ({ onLoaded }) => {
                             {/* FOOTER MOTIVACIONAL IDÉNTICO AL MENSUAL */}
                             <div className="gsd-diario-footer">
                                 <span className="gsd-footer-icon">⚡</span>
-                                <span>¡Inicia sesión en cabina y participa automáticamente!</span>
+                                <span>¡Inicia sesión en una PC y participa automáticamente!</span>
                             </div>
                         </div>
                     )}

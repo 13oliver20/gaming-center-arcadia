@@ -453,25 +453,24 @@
     border-color: rgba(0, 229, 255, 0.28) !important;
     background: linear-gradient(135deg, rgba(12, 28, 38, 0.95) 0%, rgba(8, 18, 26, 0.98) 100%) !important;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25), 0 0 15px rgba(0, 229, 255, 0.08) !important;
+    padding-right: 12px;
 }
 
 .gsd-diario-info-card .gdc-info-title {
-    font-size: 0.76rem;
+    font-size: 0.80rem;
     font-weight: 800;
-    letter-spacing: 0.3px;
+    letter-spacing: 0.5px;
     color: #00e5ff;
     white-space: nowrap;
-    overflow: visible;
     text-shadow: 0 0 8px rgba(0, 229, 255, 0.4);
     line-height: 1.2;
 }
 
 .gsd-diario-info-card .gdc-info-sub {
-    font-size: 0.64rem;
-    color: rgba(255, 255, 255, 0.72);
+    font-size: 0.68rem;
+    color: rgba(255, 255, 255, 0.75);
     white-space: nowrap;
-    overflow: visible;
-    margin-top: 2px;
+    margin-top: 3px;
     line-height: 1.2;
 }
 
