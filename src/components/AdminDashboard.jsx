@@ -261,6 +261,7 @@ export default function AdminDashboard() {
     // Cálculos de clientes (40 PCs)
     const onlineClients = clients.filter(c => c.online)
     const gamingClients = clients.filter(c => c.online && (c.wan_active === 'wan3_gaming' || c.actividad === 'gaming'))
+    const dualClients = clients.filter(c => c.online && (c.wan_active === 'wan_dual' || c.actividad === 'dual'))
     const navClients = clients.filter(c => c.online && (c.wan_active === 'wan1_nav' || c.wan_active === 'wan2_nav' || c.actividad === 'navegacion'))
     const heavyClients = clients.filter(c => c.online && (Number(c.rx_kbps) > 25000 || c.actividad === 'descarga'))
     const offlineClients = clients.filter(c => !c.online)
@@ -275,11 +276,12 @@ export default function AdminDashboard() {
     // Lista de PCs filtrada
     const filteredClients = useMemo(() => {
         if (clientFilter === 'gaming') return gamingClients
+        if (clientFilter === 'dual') return dualClients
         if (clientFilter === 'nav') return navClients
         if (clientFilter === 'heavy') return heavyClients
         if (clientFilter === 'offline') return offlineClients
         return clients
-    }, [clients, clientFilter, gamingClients, navClients, heavyClients, offlineClients])
+    }, [clients, clientFilter, gamingClients, dualClients, navClients, heavyClients, offlineClients])
 
     // Formateador exacto en Kilobytes (KB) solicitado por el usuario
     const formatKB = (val) => {
@@ -712,6 +714,9 @@ export default function AdminDashboard() {
                         <span className="nfc-stat-item" style={{ color: '#d18aff' }}>
                             🎮 {gamingClients.length} En Juego (WAN 3)
                         </span>
+                        <span className="nfc-stat-item" style={{ color: '#ffd600' }}>
+                            ⚡ {dualClients.length} Dual (Juego + Web)
+                        </span>
                         <span className="nfc-stat-item" style={{ color: '#00e5ff' }}>
                             🌐 {navClients.length} Navegando (WAN 1/2)
                         </span>
@@ -732,6 +737,12 @@ export default function AdminDashboard() {
                             onClick={() => setClientFilter('gaming')}
                         >
                             🎮 Gaming ({gamingClients.length})
+                        </button>
+                        <button 
+                            className={`nfc-tab ${clientFilter === 'dual' ? 'tab-active' : ''}`}
+                            onClick={() => setClientFilter('dual')}
+                        >
+                            ⚡ Dual ({dualClients.length})
                         </button>
                         <button 
                             className={`nfc-tab ${clientFilter === 'nav' ? 'tab-active' : ''}`}
@@ -777,27 +788,33 @@ export default function AdminDashboard() {
                     const renderPcCard = (pcNum) => {
                         const pc = getPcByNumber(pcNum)
                         const isGaming = pc.online && (pc.wan_active === 'wan3_gaming' || pc.actividad === 'gaming')
+                        const isDual = pc.online && (pc.wan_active === 'wan_dual' || pc.actividad === 'dual')
+                        const isWan1 = pc.online && (pc.wan_active === 'wan1_nav' || (!isGaming && !isDual && pcNum % 2 === 0))
+                        const isWan2 = pc.online && (pc.wan_active === 'wan2_nav' || (!isGaming && !isDual && pcNum % 2 !== 0))
                         const isHeavy = pc.online && Number(pc.rx_kbps) > 25000
-                        const isNav = pc.online && !isGaming && !isHeavy
+                        const isIdle = pc.online && !isGaming && !isDual && !isHeavy && Number(pc.rx_kbps) === 0 && Number(pc.tx_kbps) === 0
+                        const isNav = pc.online && !isGaming && !isDual && !isIdle
 
                         const matchesFilter = 
                             clientFilter === 'all' ? true :
                             clientFilter === 'gaming' ? isGaming :
-                            clientFilter === 'nav' ? isNav :
+                            clientFilter === 'nav' ? (isNav || isWan1 || isWan2) :
                             clientFilter === 'heavy' ? isHeavy :
                             clientFilter === 'offline' ? !pc.online : true
+
+                        const pccNavWan = pcNum % 2 === 0 ? 'WAN 1' : 'WAN 2'
 
                         return (
                             <div 
                                 key={pc.ip || pcNum}
-                                className={`npc-card ${pc.online ? 'npc-online' : 'npc-offline'} ${isGaming ? 'npc-gaming' : ''} ${isHeavy ? 'npc-heavy' : ''} ${!matchesFilter ? 'npc-dimmed' : ''}`}
+                                className={`npc-card ${pc.online ? 'npc-online' : 'npc-offline'} ${isGaming ? 'npc-gaming' : ''} ${isDual ? 'npc-dual' : ''} ${isHeavy ? 'npc-heavy' : ''} ${!matchesFilter ? 'npc-dimmed' : ''}`}
                                 onClick={() => setSelectedPc(pc)}
                                 title={`Puesto #${pcNum} · ${pc.pc_name} (${pc.ip})`}
                             >
                                 <div className="npc-top-row">
                                     <div className="npc-title-group">
                                         <span className={`npc-led ${
-                                            !pc.online ? 'led-off' : isHeavy ? 'led-yellow' : isGaming ? 'led-purple' : 'led-blue'
+                                            !pc.online ? 'led-off' : isHeavy ? 'led-yellow' : isDual ? 'led-yellow' : isGaming ? 'led-purple' : 'led-blue'
                                         }`} />
                                         <span className="npc-name">{pc.pc_name}</span>
                                     </div>
@@ -807,12 +824,18 @@ export default function AdminDashboard() {
                                 <div className="npc-wan-row">
                                     {!pc.online ? (
                                         <span className="npc-badge badge-off">Apagada / Libre</span>
+                                    ) : isDual ? (
+                                        <span className="npc-badge badge-dual">⚡ WAN 3 + {pccNavWan}</span>
                                     ) : isGaming ? (
-                                        <span className="npc-badge badge-gaming">🎮 WAN 3</span>
+                                        <span className="npc-badge badge-gaming">🎮 WAN 3 (Juego)</span>
                                     ) : isHeavy ? (
-                                        <span className="npc-badge badge-heavy">⚡ Descarga</span>
+                                        <span className="npc-badge badge-heavy">⚡ {pccNavWan} (Descarga)</span>
+                                    ) : isIdle ? (
+                                        <span className="npc-badge badge-idle">🟢 Reposo · {pccNavWan}</span>
+                                    ) : pc.wan_active === 'wan1_nav' || (pcNum % 2 === 0) ? (
+                                        <span className="npc-badge badge-wan1">🌐 WAN 1 (Web)</span>
                                     ) : (
-                                        <span className="npc-badge badge-nav">🌐 WAN 1/2</span>
+                                        <span className="npc-badge badge-wan2">🌐 WAN 2 (Web)</span>
                                     )}
                                 </div>
 

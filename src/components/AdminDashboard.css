@@ -1142,7 +1142,32 @@
 .badge-gaming {
     background: rgba(180, 80, 255, 0.15);
     color: #d18aff;
-    border: 1px solid rgba(180, 80, 255, 0.3);
+    border: 1px solid rgba(180, 80, 255, 0.35);
+}
+
+.badge-wan1 {
+    background: rgba(0, 229, 255, 0.12);
+    color: #00e5ff;
+    border: 1px solid rgba(0, 229, 255, 0.35);
+}
+
+.badge-wan2 {
+    background: rgba(56, 189, 248, 0.12);
+    color: #38bdf8;
+    border: 1px solid rgba(56, 189, 248, 0.35);
+}
+
+.badge-dual {
+    background: linear-gradient(90deg, rgba(180, 80, 255, 0.22) 0%, rgba(0, 229, 255, 0.22) 100%);
+    color: #facc15;
+    border: 1px solid rgba(250, 204, 21, 0.45);
+    font-weight: 800;
+}
+
+.badge-idle {
+    background: rgba(16, 185, 129, 0.1);
+    color: #34d399;
+    border: 1px solid rgba(16, 185, 129, 0.25);
 }
 
 .badge-nav {
