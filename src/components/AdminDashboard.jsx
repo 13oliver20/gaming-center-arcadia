@@ -1281,7 +1281,7 @@ export default function AdminDashboard() {
                                 // Foquito 2: WAN 1 o WAN 2 (Descargas Steam/Epic según balanceo PCC)
                                 const isWebActive = isUp && (nic.wan_active === 'wan1_nav' || nic.wan_active === 'wan2_nav' || nic.wan_active === 'wan_dual' || Number(nic.rx_kbps) > 200)
                                 const webLampClass = !isUp ? 'lamp-off' : isWebActive ? 'lamp-web-on' : 'lamp-standby'
-                                const webDotClass = !isUp ? 'dot-off' : webActive ? 'dot-web' : 'dot-standby'
+                                const webDotClass = !isUp ? 'dot-off' : isWebActive ? 'dot-web' : 'dot-standby'
                                 const webLabel = !isUp ? 'Off' : isWebActive ? 'Descarga' : 'Standby'
 
                                 return (
