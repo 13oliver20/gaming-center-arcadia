@@ -353,12 +353,13 @@ export default function AdminDashboard() {
         return `${num.toLocaleString()} KB`
     }
 
-    // Obtener PC por número fijo de puesto (1 al 40) para mantener la distribución física
+    // Obtener PC cliente por número fijo de puesto (1 al 40) mapeado estrictamente por su IP (192.168.1.101 al 140)
     const getPcByNumber = (num) => {
-        const found = clients.find(c => c.pc_number === num)
+        const targetIp = `192.168.1.${100 + num}`
+        const found = clients.find(c => c.ip === targetIp)
         if (found) return found
         return {
-            ip: `192.168.1.${100 + num}`,
+            ip: targetIp,
             pc_name: `PC-${String(num).padStart(2, '0')}`,
             pc_number: num,
             online: false,
@@ -872,13 +873,13 @@ export default function AdminDashboard() {
                         const gameActive = pc.online && (isGaming || isDual)
                         const gameLampClass = !pc.online ? 'lamp-off' : gameActive ? 'lamp-game-on' : 'lamp-standby'
                         const gameDotClass = !pc.online ? 'dot-off' : gameActive ? 'dot-game' : 'dot-standby'
-                        const gameLabel = !pc.online ? 'Off' : gameActive ? 'En Juego' : 'En Reposo'
+                        const gameLabel = !pc.online ? 'Off' : gameActive ? 'Juego' : 'Reposo'
 
                         // Foquito 2: WAN 1 o WAN 2 (Navegación / Web)
                         const webActive = pc.online && (isNav || isDual || isHeavy)
                         const webLampClass = !pc.online ? 'lamp-off' : webActive ? 'lamp-web-on' : 'lamp-standby'
                         const webDotClass = !pc.online ? 'dot-off' : webActive ? 'dot-web' : 'dot-standby'
-                        const webLabel = !pc.online ? 'Off' : isHeavy ? 'Descarga' : webActive ? 'Navegando' : 'En Reposo'
+                        const webLabel = !pc.online ? 'Off' : isHeavy ? 'Descarga' : webActive ? 'Web' : 'Reposo'
 
                         return (
                             <div 
@@ -1268,6 +1269,21 @@ export default function AdminDashboard() {
                             {serverNics.map((nic, idx) => {
                                 const isUp = nic.online || Number(nic.rx_kbps) > 0 || Number(nic.tx_kbps) > 0
                                 const role = NIC_ROLES[idx] || 'LAN Diskless'
+                                const nicLastIp = 201 + idx
+                                const pccWan = nicLastIp % 2 === 0 ? 'WAN 1' : 'WAN 2'
+
+                                // Foquito 1: WAN 3 (Juegos / Sync P2P)
+                                const isGameActive = isUp && (nic.wan_active === 'wan3_gaming' || nic.wan_active === 'wan_dual')
+                                const gameLampClass = !isUp ? 'lamp-off' : isGameActive ? 'lamp-game-on' : 'lamp-standby'
+                                const gameDotClass = !isUp ? 'dot-off' : isGameActive ? 'dot-game' : 'dot-standby'
+                                const gameLabel = !isUp ? 'Off' : isGameActive ? 'Juegos' : 'Standby'
+
+                                // Foquito 2: WAN 1 o WAN 2 (Descargas Steam/Epic según balanceo PCC)
+                                const isWebActive = isUp && (nic.wan_active === 'wan1_nav' || nic.wan_active === 'wan2_nav' || nic.wan_active === 'wan_dual' || Number(nic.rx_kbps) > 200)
+                                const webLampClass = !isUp ? 'lamp-off' : isWebActive ? 'lamp-web-on' : 'lamp-standby'
+                                const webDotClass = !isUp ? 'dot-off' : webActive ? 'dot-web' : 'dot-standby'
+                                const webLabel = !isUp ? 'Off' : isWebActive ? 'Descarga' : 'Standby'
+
                                 return (
                                     <div 
                                         key={nic.ip}
@@ -1285,7 +1301,21 @@ export default function AdminDashboard() {
 
                                         <span className="nic-role-label">{role}</span>
 
-                                        <div className="nic-status-row">
+                                        {/* 2 FOQUITOS DE SALIDA WAN */}
+                                        <div className="npc-wan-lamps" style={{ marginTop: '3px' }}>
+                                            <div className={`npc-lamp-item ${gameLampClass}`}>
+                                                <span className={`npc-lamp-dot ${gameDotClass}`} />
+                                                <span className="npc-lamp-tag">WAN 3</span>
+                                                <span className="npc-lamp-status">{gameLabel}</span>
+                                            </div>
+                                            <div className={`npc-lamp-item ${webLampClass}`}>
+                                                <span className={`npc-lamp-dot ${webDotClass}`} />
+                                                <span className="npc-lamp-tag">{pccWan}</span>
+                                                <span className="npc-lamp-status">{webLabel}</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="nic-status-row" style={{ marginTop: '3px' }}>
                                             <span className={`nic-status-pill ${isUp ? 'pill-link-up' : 'pill-link-down'}`}>
                                                 {isUp ? '🟢 LINK UP · LAN' : '⚪ EN ESPERA'}
                                             </span>

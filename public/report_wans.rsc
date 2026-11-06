@@ -261,7 +261,17 @@
           }
         }
       } else={
-        :set wan "lan_diskless"
+        :local gConnSrv [:len [/ip firewall connection find src-address~("^" . $curIp . ":") connection-mark="conn_WAN3"]]
+        :local wConnSrv [:len [/ip firewall connection find src-address~("^" . $curIp . ":") connection-mark~"conn_WAN[12]"]]
+        :if ($gConnSrv > 0 and $wConnSrv > 0) do={ :set wan "wan_dual" } else={
+          :if ($gConnSrv > 0) do={ :set wan "wan3_gaming" } else={
+            :if ($wConnSrv > 0) do={
+              :if (($curLastIp % 2) = 0) do={ :set wan "wan1_nav" } else={ :set wan "wan2_nav" }
+            } else={
+              :if (($curLastIp % 2) = 0) do={ :set wan "wan1_nav" } else={ :set wan "wan2_nav" }
+            }
+          }
+        }
       }
 
       :do {
@@ -280,8 +290,11 @@
       } on-error={}
     }
 
+    :local devNum $curLastIp
+    :if ($curLastIp < 100) do={ :set devNum ($curLastIp + 990) }
+
     :if ($fInfra = false) do={ :set bInfra ($bInfra . ",") }
-    :set bInfra ($bInfra . "{\"ip\":\"" . $curIp . "\",\"pc_name\":\"" . $devName . "\",\"pc_number\":" . $curLastIp . ",\"online\":" . $isUp . ",\"wan_active\":\"" . $wan . "\",\"actividad\":\"" . $devAct . "\",\"rx_kbps\":" . $rxKb . ",\"tx_kbps\":" . $txKb . "}")
+    :set bInfra ($bInfra . "{\"ip\":\"" . $curIp . "\",\"pc_name\":\"" . $devName . "\",\"pc_number\":" . $devNum . ",\"online\":" . $isUp . ",\"wan_active\":\"" . $wan . "\",\"actividad\":\"" . $devAct . "\",\"rx_kbps\":" . $rxKb . ",\"tx_kbps\":" . $txKb . "}")
     :set fInfra false
   }
   :set bInfra ($bInfra . "]")
