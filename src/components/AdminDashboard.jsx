@@ -130,7 +130,7 @@ export default function AdminDashboard() {
                 .single()
             if (healthData) setHealth(healthData)
 
-            // 3. Cargar las 40 PCs clientes
+            // 3. Cargar las 40 PCs clientes e infraestructura
             const { data: clientData } = await supabase
                 .from('mikrotik_clients')
                 .select('*')
@@ -139,8 +139,9 @@ export default function AdminDashboard() {
                 setClients(prev => {
                     const merged = [...prev]
                     clientData.forEach(c => {
-                        const idx = merged.findIndex(p => p.ip === c.ip || p.pc_number === c.pc_number)
+                        const idx = merged.findIndex(p => p.ip === c.ip || (c.pc_number && p.pc_number === c.pc_number))
                         if (idx >= 0) merged[idx] = { ...merged[idx], ...c }
+                        else merged.push(c)
                     })
                     return merged
                 })
@@ -258,20 +259,83 @@ export default function AdminDashboard() {
     const onlineCount = wans.filter(isWanAlive).length
     const resolvingCount = wans.filter(w => isWanAlive(w) && (Number(w.rx_mbps) > 0.05 || Number(w.tx_mbps) > 0.05)).length
 
-    // Cálculos de clientes (40 PCs)
-    const onlineClients = clients.filter(c => c.online)
-    const gamingClients = clients.filter(c => c.online && (c.wan_active === 'wan3_gaming' || c.actividad === 'gaming'))
-    const dualClients = clients.filter(c => c.online && (c.wan_active === 'wan_dual' || c.actividad === 'dual'))
-    const navClients = clients.filter(c => c.online && (c.wan_active === 'wan1_nav' || c.wan_active === 'wan2_nav' || c.actividad === 'navegacion'))
-    const heavyClients = clients.filter(c => c.online && (Number(c.rx_kbps) > 25000 || c.actividad === 'descarga'))
-    const offlineClients = clients.filter(c => !c.online)
+    // Cálculos de clientes exclusivos (40 PCs cliente)
+    const clientPcsOnly = useMemo(() => {
+        return clients.filter(c => c.pc_number >= 1 && c.pc_number <= 40)
+    }, [clients])
+    const onlineClients = clientPcsOnly.filter(c => c.online)
+    const gamingClients = clientPcsOnly.filter(c => c.online && (c.wan_active === 'wan3_gaming' || c.actividad === 'gaming'))
+    const dualClients = clientPcsOnly.filter(c => c.online && (c.wan_active === 'wan_dual' || c.actividad === 'dual'))
+    const navClients = clientPcsOnly.filter(c => c.online && (c.wan_active === 'wan1_nav' || c.wan_active === 'wan2_nav' || c.actividad === 'navegacion'))
+    const heavyClients = clientPcsOnly.filter(c => c.online && (Number(c.rx_kbps) > 25000 || c.actividad === 'descarga'))
+    const offlineClients = clientPcsOnly.filter(c => !c.online)
 
-    // Top consumidor de ancho de banda
+    // Equipos de Infraestructura (Administración, Caja y Servidor 8 NICs)
+    const adminDevice = useMemo(() => {
+        const found = clients.find(c => c.ip === '192.168.1.10' || c.pc_number === 10)
+        return found || {
+            ip: '192.168.1.10',
+            pc_name: 'PC Administradora',
+            pc_number: 10,
+            online: false,
+            rx_kbps: 0,
+            tx_kbps: 0,
+            wan_active: 'wan1_nav',
+            actividad: 'admin'
+        }
+    }, [clients])
+
+    const controlDevice = useMemo(() => {
+        const found = clients.find(c => c.ip === '192.168.1.66' || c.pc_number === 66)
+        return found || {
+            ip: '192.168.1.66',
+            pc_name: 'PC Controladora (Caja)',
+            pc_number: 66,
+            online: false,
+            rx_kbps: 0,
+            tx_kbps: 0,
+            wan_active: 'wan1_nav',
+            actividad: 'caja'
+        }
+    }, [clients])
+
+    const NIC_ROLES = [
+        'Boot / SO (Windows 11)',
+        'Boot / SO (Windows 11)',
+        'Game Cache & Writeback',
+        'Game Cache & Writeback',
+        'Game Cache & Writeback',
+        'Game Cache & Writeback',
+        'Virtual Disk & Storage',
+        'Virtual Disk & Storage'
+    ]
+
+    const serverNics = useMemo(() => {
+        return Array.from({ length: 8 }, (_, idx) => {
+            const ip = `192.168.1.${201 + idx}`
+            const num = 201 + idx
+            const found = clients.find(c => c.ip === ip || c.pc_number === num)
+            return found || {
+                ip,
+                pc_name: `SRV-NIC 0${idx + 1}`,
+                pc_number: num,
+                online: false,
+                rx_kbps: 0,
+                tx_kbps: 0,
+                wan_active: 'lan_diskless',
+                actividad: 'diskless'
+            }
+        })
+    }, [clients])
+
+    const onlineNicsCount = serverNics.filter(n => n.online || Number(n.rx_kbps) > 0 || Number(n.tx_kbps) > 0).length
+
+    // Top consumidor de ancho de banda (entre las 40 PCs cliente)
     const topConsumer = useMemo(() => {
-        const sorted = [...clients].filter(c => c.online).sort((a, b) => (Number(b.rx_kbps) || 0) - (Number(a.rx_kbps) || 0))
+        const sorted = [...clientPcsOnly].filter(c => c.online).sort((a, b) => (Number(b.rx_kbps) || 0) - (Number(a.rx_kbps) || 0))
         if (sorted.length > 0 && Number(sorted[0].rx_kbps) > 5000) return sorted[0]
         return null
-    }, [clients])
+    }, [clientPcsOnly])
 
     // Lista de PCs filtrada
     const filteredClients = useMemo(() => {
@@ -280,8 +344,8 @@ export default function AdminDashboard() {
         if (clientFilter === 'nav') return navClients
         if (clientFilter === 'heavy') return heavyClients
         if (clientFilter === 'offline') return offlineClients
-        return clients
-    }, [clients, clientFilter, gamingClients, dualClients, navClients, heavyClients, offlineClients])
+        return clientPcsOnly
+    }, [clientPcsOnly, clientFilter, gamingClients, dualClients, navClients, heavyClients, offlineClients])
 
     // Formateador exacto en Kilobytes (KB) solicitado por el usuario
     const formatKB = (val) => {
@@ -791,7 +855,7 @@ export default function AdminDashboard() {
                         const isDual = pc.online && (pc.wan_active === 'wan_dual' || pc.actividad === 'dual')
                         const isWan1 = pc.online && (pc.wan_active === 'wan1_nav' || (!isGaming && !isDual && pcNum % 2 === 0))
                         const isWan2 = pc.online && (pc.wan_active === 'wan2_nav' || (!isGaming && !isDual && pcNum % 2 !== 0))
-                        const isHeavy = pc.online && Number(pc.rx_kbps) > 25000
+                        const isHeavy = pc.online && (Number(pc.rx_kbps) > 25000 || pc.actividad === 'descarga')
                         const isIdle = pc.online && !isGaming && !isDual && !isHeavy && Number(pc.rx_kbps) === 0 && Number(pc.tx_kbps) === 0
                         const isNav = pc.online && !isGaming && !isDual && !isIdle
 
@@ -804,12 +868,24 @@ export default function AdminDashboard() {
 
                         const pccNavWan = pcNum % 2 === 0 ? 'WAN 1' : 'WAN 2'
 
+                        // Foquito 1: WAN 3 (Juegos)
+                        const gameActive = pc.online && (isGaming || isDual)
+                        const gameLampClass = !pc.online ? 'lamp-off' : gameActive ? 'lamp-game-on' : 'lamp-standby'
+                        const gameDotClass = !pc.online ? 'dot-off' : gameActive ? 'dot-game' : 'dot-standby'
+                        const gameLabel = !pc.online ? 'Off' : gameActive ? 'En Juego' : 'En Reposo'
+
+                        // Foquito 2: WAN 1 o WAN 2 (Navegación / Web)
+                        const webActive = pc.online && (isNav || isDual || isHeavy)
+                        const webLampClass = !pc.online ? 'lamp-off' : webActive ? 'lamp-web-on' : 'lamp-standby'
+                        const webDotClass = !pc.online ? 'dot-off' : webActive ? 'dot-web' : 'dot-standby'
+                        const webLabel = !pc.online ? 'Off' : isHeavy ? 'Descarga' : webActive ? 'Navegando' : 'En Reposo'
+
                         return (
                             <div 
                                 key={pc.ip || pcNum}
                                 className={`npc-card ${pc.online ? 'npc-online' : 'npc-offline'} ${isGaming ? 'npc-gaming' : ''} ${isDual ? 'npc-dual' : ''} ${isHeavy ? 'npc-heavy' : ''} ${!matchesFilter ? 'npc-dimmed' : ''}`}
                                 onClick={() => setSelectedPc(pc)}
-                                title={`Puesto #${pcNum} · ${pc.pc_name} (${pc.ip})`}
+                                title={`Puesto #${pcNum} · ${pc.pc_name} (${pc.ip}) - Clic para ver detalles`}
                             >
                                 <div className="npc-top-row">
                                     <div className="npc-title-group">
@@ -821,22 +897,21 @@ export default function AdminDashboard() {
                                     <span className="npc-ip-tag">{pc.ip ? pc.ip.split('.').slice(2).join('.') : `1.${100 + pcNum}`}</span>
                                 </div>
 
-                                <div className="npc-wan-row">
-                                    {!pc.online ? (
-                                        <span className="npc-badge badge-off">Apagada / Libre</span>
-                                    ) : isDual ? (
-                                        <span className="npc-badge badge-dual">⚡ WAN 3 + {pccNavWan}</span>
-                                    ) : isGaming ? (
-                                        <span className="npc-badge badge-gaming">🎮 WAN 3 (Juego)</span>
-                                    ) : isHeavy ? (
-                                        <span className="npc-badge badge-heavy">⚡ {pccNavWan} (Descarga)</span>
-                                    ) : isIdle ? (
-                                        <span className="npc-badge badge-idle">🟢 Reposo · {pccNavWan}</span>
-                                    ) : pc.wan_active === 'wan1_nav' || (pcNum % 2 === 0) ? (
-                                        <span className="npc-badge badge-wan1">🌐 WAN 1 (Web)</span>
-                                    ) : (
-                                        <span className="npc-badge badge-wan2">🌐 WAN 2 (Web)</span>
-                                    )}
+                                {/* 2 FOQUITOS: UNO BAJO DEL OTRO */}
+                                <div className="npc-wan-lamps">
+                                    {/* Foquito 1: WAN 3 (Juegos) */}
+                                    <div className={`npc-lamp-item ${gameLampClass}`}>
+                                        <span className={`npc-lamp-dot ${gameDotClass}`} />
+                                        <span className="npc-lamp-tag">WAN 3</span>
+                                        <span className="npc-lamp-status">{gameLabel}</span>
+                                    </div>
+
+                                    {/* Foquito 2: WAN 1 o WAN 2 (Navegación / Web) */}
+                                    <div className={`npc-lamp-item ${webLampClass}`}>
+                                        <span className={`npc-lamp-dot ${webDotClass}`} />
+                                        <span className="npc-lamp-tag">{pccNavWan}</span>
+                                        <span className="npc-lamp-status">{webLabel}</span>
+                                    </div>
                                 </div>
 
                                 <div className="npc-traffic-row">
@@ -964,17 +1039,17 @@ export default function AdminDashboard() {
                         )
                     }
 
-                    // MODO HORIZONTAL ("ACOSTADO" PARA PC)
+                    // MODO HORIZONTAL ("ACOSTADO" PARA PC) - Orden corregido de 01 a 40 de arriba hacia abajo
                     return (
                         <div className="noc-floor-map floor-mode-horizontal">
-                            {/* COLUMNA 1: FILA 1 (01 a 05 - De abajo hacia arriba) */}
+                            {/* COLUMNA 1: FILA 1 (01 a 05) */}
                             <div className="nfm-h-column nfm-h-single">
                                 <div className="nfm-h-head">
                                     <span className="nfm-block-badge">FILA 1</span>
                                     <span className="nfm-h-sub">Pared Izq (01-05)</span>
                                 </div>
                                 <div className="nfm-h-stack-5">
-                                    {[5, 4, 3, 2, 1].map(renderPcCard)}
+                                    {[1, 2, 3, 4, 5].map(renderPcCard)}
                                 </div>
                             </div>
 
@@ -991,11 +1066,11 @@ export default function AdminDashboard() {
                                 </div>
                                 <div className="nfm-h-double-grid">
                                     <div className="nfm-h-stack-5">
-                                        {[10, 9, 8, 7, 6].map(renderPcCard)}
+                                        {[6, 7, 8, 9, 10].map(renderPcCard)}
                                     </div>
                                     <div className="nfm-h-spine" title="Mesa compartida" />
                                     <div className="nfm-h-stack-5">
-                                        {[15, 14, 13, 12, 11].map(renderPcCard)}
+                                        {[11, 12, 13, 14, 15].map(renderPcCard)}
                                     </div>
                                 </div>
                             </div>
@@ -1013,11 +1088,11 @@ export default function AdminDashboard() {
                                 </div>
                                 <div className="nfm-h-double-grid">
                                     <div className="nfm-h-stack-5">
-                                        {[20, 19, 18, 17, 16].map(renderPcCard)}
+                                        {[16, 17, 18, 19, 20].map(renderPcCard)}
                                     </div>
                                     <div className="nfm-h-spine" title="Mesa compartida" />
                                     <div className="nfm-h-stack-5">
-                                        {[25, 24, 23, 22, 21].map(renderPcCard)}
+                                        {[21, 22, 23, 24, 25].map(renderPcCard)}
                                     </div>
                                 </div>
                             </div>
@@ -1035,11 +1110,11 @@ export default function AdminDashboard() {
                                 </div>
                                 <div className="nfm-h-double-grid">
                                     <div className="nfm-h-stack-5">
-                                        {[30, 29, 28, 27, 26].map(renderPcCard)}
+                                        {[26, 27, 28, 29, 30].map(renderPcCard)}
                                     </div>
                                     <div className="nfm-h-spine" title="Mesa compartida" />
                                     <div className="nfm-h-stack-5">
-                                        {[35, 34, 33, 32, 31].map(renderPcCard)}
+                                        {[31, 32, 33, 34, 35].map(renderPcCard)}
                                     </div>
                                 </div>
                             </div>
@@ -1056,12 +1131,186 @@ export default function AdminDashboard() {
                                     <span className="nfm-h-sub">Pared Der (36-40)</span>
                                 </div>
                                 <div className="nfm-h-stack-5">
-                                    {[40, 39, 38, 37, 36].map(renderPcCard)}
+                                    {[36, 37, 38, 39, 40].map(renderPcCard)}
                                 </div>
                             </div>
                         </div>
                     )
                 })()}
+            </div>
+
+            {/* SECCIÓN 4: INFRAESTRUCTURA DE RED Y SERVIDORES (8 NICS + ADMIN + CAJA) */}
+            <div className="noc-infra-section">
+                <div className="noc-section-title-wrap">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                        <h2 className="noc-section-title">🖥️ INFRAESTRUCTURA & SERVIDORES (8 NICS + ADMIN + CAJA)</h2>
+                        <span className="noc-section-badge" style={{ borderColor: 'rgba(0, 229, 255, 0.3)', color: '#00e5ff' }}>
+                            Red Interna: 192.168.1.0/24
+                        </span>
+                    </div>
+                    <span className="noc-section-badge">
+                        Diskless Master Server (8 NICS) + Control Central Arcadia
+                    </span>
+                </div>
+
+                <div className="noc-infra-layout">
+                    {/* PANEL A: PUESTOS DE CONTROL Y ADMINISTRACIÓN */}
+                    <div className="nih-panel nih-panel-mgmt">
+                        <div className="nih-panel-head">
+                            <span className="nih-badge nih-badge-mgmt">CONTROL CENTRAL ARCADIA</span>
+                            <span className="nih-panel-sub">Administración y Facturación</span>
+                        </div>
+
+                        <div className="nih-mgmt-grid">
+                            {/* PC Administradora */}
+                            <div 
+                                className={`nih-card ${adminDevice.online ? 'nih-card-online' : 'nih-card-offline'}`}
+                                onClick={() => setSelectedPc(adminDevice)}
+                                title="Clic para ver detalles de la PC Administradora"
+                            >
+                                <div className="nih-card-top">
+                                    <div className="nih-card-title-wrap">
+                                        <span className={`npc-led ${adminDevice.online ? 'led-blue' : 'led-off'}`} />
+                                        <span className="nih-card-title">PC Administradora</span>
+                                    </div>
+                                    <span className="nih-ip-badge">{adminDevice.ip}</span>
+                                </div>
+                                <span className="nih-card-role">Gestión General del Sistema Arcadia</span>
+
+                                <div className="npc-wan-lamps" style={{ marginTop: '4px' }}>
+                                    <div className={`npc-lamp-item ${adminDevice.online ? 'lamp-game-on' : 'lamp-off'}`}>
+                                        <span className={`npc-lamp-dot ${adminDevice.online ? 'dot-game' : 'dot-off'}`} />
+                                        <span className="npc-lamp-tag">WAN 3</span>
+                                        <span className="npc-lamp-status">{adminDevice.online ? 'Prioridad' : 'Off'}</span>
+                                    </div>
+                                    <div className={`npc-lamp-item ${adminDevice.online ? 'lamp-web-on' : 'lamp-off'}`}>
+                                        <span className={`npc-lamp-dot ${adminDevice.online ? 'dot-web' : 'dot-off'}`} />
+                                        <span className="npc-lamp-tag">WAN 1</span>
+                                        <span className="npc-lamp-status">{adminDevice.online ? 'Admin / Web' : 'Off'}</span>
+                                    </div>
+                                </div>
+
+                                <div className="npc-traffic-row">
+                                    <div className="npc-rate">
+                                        <span className="npc-dir">⬇️</span>
+                                        <span className="npc-num" style={{ color: '#00e5ff' }}>
+                                            {adminDevice.online ? formatKB(adminDevice.rx_kbps) : '0 KB'}
+                                        </span>
+                                    </div>
+                                    <div className="npc-rate">
+                                        <span className="npc-dir">⬆️</span>
+                                        <span className="npc-num" style={{ color: '#b450ff' }}>
+                                            {adminDevice.online ? formatKB(adminDevice.tx_kbps) : '0 KB'}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* PC Controladora / Caja */}
+                            <div 
+                                className={`nih-card ${controlDevice.online ? 'nih-card-online' : 'nih-card-offline'}`}
+                                onClick={() => setSelectedPc(controlDevice)}
+                                title="Clic para ver detalles de la PC Controladora"
+                            >
+                                <div className="nih-card-top">
+                                    <div className="nih-card-title-wrap">
+                                        <span className={`npc-led ${controlDevice.online ? 'led-blue' : 'led-off'}`} />
+                                        <span className="nih-card-title">PC Controladora</span>
+                                    </div>
+                                    <span className="nih-ip-badge">{controlDevice.ip}</span>
+                                </div>
+                                <span className="nih-card-role">CyberPlanet · Facturación y Caja</span>
+
+                                <div className="npc-wan-lamps" style={{ marginTop: '4px' }}>
+                                    <div className={`npc-lamp-item ${controlDevice.online ? 'lamp-game-on' : 'lamp-off'}`}>
+                                        <span className={`npc-lamp-dot ${controlDevice.online ? 'dot-game' : 'dot-off'}`} />
+                                        <span className="npc-lamp-tag">WAN 3</span>
+                                        <span className="npc-lamp-status">{controlDevice.online ? 'Prioridad' : 'Off'}</span>
+                                    </div>
+                                    <div className={`npc-lamp-item ${controlDevice.online ? 'lamp-web-on' : 'lamp-off'}`}>
+                                        <span className={`npc-lamp-dot ${controlDevice.online ? 'dot-web' : 'dot-off'}`} />
+                                        <span className="npc-lamp-tag">WAN 1</span>
+                                        <span className="npc-lamp-status">{controlDevice.online ? 'Caja / Web' : 'Off'}</span>
+                                    </div>
+                                </div>
+
+                                <div className="npc-traffic-row">
+                                    <div className="npc-rate">
+                                        <span className="npc-dir">⬇️</span>
+                                        <span className="npc-num" style={{ color: '#00e5ff' }}>
+                                            {controlDevice.online ? formatKB(controlDevice.rx_kbps) : '0 KB'}
+                                        </span>
+                                    </div>
+                                    <div className="npc-rate">
+                                        <span className="npc-dir">⬆️</span>
+                                        <span className="npc-num" style={{ color: '#b450ff' }}>
+                                            {controlDevice.online ? formatKB(controlDevice.tx_kbps) : '0 KB'}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* PANEL B: SERVIDOR DISKLESS MASTER (8 NICS RACK) */}
+                    <div className="nih-panel nih-panel-server">
+                        <div className="nih-panel-head">
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                <span className="nih-badge nih-badge-server">SERVIDOR DISKLESS MASTER</span>
+                                <span className="nih-online-nics-pill">
+                                    {onlineNicsCount} / 8 NICs Link Up
+                                </span>
+                            </div>
+                            <span className="nih-panel-sub">Agregación Multi-Gigabit · Carga de SO y Juegos en Red Local</span>
+                        </div>
+
+                        <div className="nih-nics-grid">
+                            {serverNics.map((nic, idx) => {
+                                const isUp = nic.online || Number(nic.rx_kbps) > 0 || Number(nic.tx_kbps) > 0
+                                const role = NIC_ROLES[idx] || 'LAN Diskless'
+                                return (
+                                    <div 
+                                        key={nic.ip}
+                                        className={`nih-nic-card ${isUp ? 'nic-card-up' : 'nic-card-down'}`}
+                                        onClick={() => setSelectedPc(nic)}
+                                        title={`${nic.pc_name} (${nic.ip}) - Rol: ${role} - Clic para ver detalles`}
+                                    >
+                                        <div className="nic-top-row">
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                <span className={`nic-led ${isUp ? 'nic-led-on' : 'nic-led-off'}`} />
+                                                <span className="nic-name">{nic.pc_name}</span>
+                                            </div>
+                                            <span className="nic-ip">{nic.ip.split('.').slice(2).join('.')}</span>
+                                        </div>
+
+                                        <span className="nic-role-label">{role}</span>
+
+                                        <div className="nic-status-row">
+                                            <span className={`nic-status-pill ${isUp ? 'pill-link-up' : 'pill-link-down'}`}>
+                                                {isUp ? '🟢 LINK UP · LAN' : '⚪ EN ESPERA'}
+                                            </span>
+                                        </div>
+
+                                        <div className="npc-traffic-row" style={{ marginTop: '4px' }}>
+                                            <div className="npc-rate">
+                                                <span className="npc-dir">⬇️</span>
+                                                <span className="npc-num" style={{ color: '#00e5ff' }}>
+                                                    {isUp ? formatKB(nic.rx_kbps) : '0 KB'}
+                                                </span>
+                                            </div>
+                                            <div className="npc-rate">
+                                                <span className="npc-dir">⬆️</span>
+                                                <span className="npc-num" style={{ color: '#00ff88' }}>
+                                                    {isUp ? formatKB(nic.tx_kbps) : '0 KB'}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )
+                            })}
+                        </div>
+                    </div>
+                </div>
             </div>
 
             {/* MODAL DETALLE DE PC SELECCIONADA */}

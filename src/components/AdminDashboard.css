@@ -935,29 +935,57 @@
 }
 
 /* ─── MODO HORIZONTAL (ACOSTADO / MODO PC PANTALLA ANCHA) ─── */
+.noc-floor-section {
+    max-width: 100%;
+    overflow: hidden;
+    box-sizing: border-box;
+}
+
 .floor-mode-horizontal {
     display: flex;
     align-items: stretch;
-    gap: 12px;
+    gap: 8px;
     overflow-x: auto;
-    padding-bottom: 12px;
+    padding-bottom: 14px;
+    max-width: 100%;
+    box-sizing: border-box;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 229, 255, 0.4) rgba(0, 0, 0, 0.3);
+}
+
+.floor-mode-horizontal::-webkit-scrollbar {
+    height: 7px;
+}
+
+.floor-mode-horizontal::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+}
+
+.floor-mode-horizontal::-webkit-scrollbar-thumb {
+    background: rgba(0, 229, 255, 0.35);
+    border-radius: 4px;
+}
+
+.floor-mode-horizontal::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 229, 255, 0.65);
 }
 
 .nfm-h-column {
     background: rgba(14, 18, 42, 0.55);
     border: 1px solid rgba(0, 229, 255, 0.15);
     border-radius: 14px;
-    padding: 12px;
+    padding: 10px;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
     flex: 1;
-    min-width: 135px;
+    min-width: 120px;
 }
 
 .nfm-h-column.nfm-h-double {
     flex: 2;
-    min-width: 275px;
+    min-width: 245px;
     background: linear-gradient(180deg, rgba(16, 20, 48, 0.65) 0%, rgba(10, 12, 28, 0.8) 100%);
     border-color: rgba(180, 80, 255, 0.25);
 }
@@ -1123,7 +1151,97 @@
     50% { opacity: 0.3; }
 }
 
-/* WAN Badge */
+/* WAN Lamps: 2 Foquitos apilados uno bajo del otro */
+.npc-wan-lamps {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    margin: 2px 0;
+}
+
+.npc-lamp-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 2px 6px;
+    border-radius: 5px;
+    font-size: 0.65rem;
+    transition: all 0.2s ease;
+    line-height: 1.2;
+}
+
+.npc-lamp-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+}
+
+.npc-lamp-tag {
+    font-weight: 800;
+    letter-spacing: 0.3px;
+    flex-shrink: 0;
+}
+
+.npc-lamp-status {
+    font-size: 0.60rem;
+    opacity: 0.85;
+    margin-left: auto;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Estados del Foquito 1 (Gaming - WAN 3) */
+.lamp-game-on {
+    background: rgba(180, 80, 255, 0.16);
+    border: 1px solid rgba(180, 80, 255, 0.45);
+    color: #e5b3ff;
+}
+
+.dot-game {
+    background: #d18aff;
+    box-shadow: 0 0 8px #d18aff, 0 0 14px rgba(180, 80, 255, 0.6);
+}
+
+/* Estados del Foquito 2 (Web - WAN 1 / WAN 2) */
+.lamp-web-on {
+    background: rgba(0, 229, 255, 0.14);
+    border: 1px solid rgba(0, 229, 255, 0.4);
+    color: #00e5ff;
+}
+
+.dot-web {
+    background: #00e5ff;
+    box-shadow: 0 0 8px #00e5ff, 0 0 14px rgba(0, 229, 255, 0.5);
+}
+
+/* Estado Standby (PC encendida pero línea en espera) */
+.lamp-standby {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.dot-standby {
+    background: rgba(255, 255, 255, 0.25);
+    box-shadow: none;
+}
+
+/* Estado Off (PC apagada) */
+.lamp-off {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.03);
+    color: rgba(255, 255, 255, 0.25);
+}
+
+.dot-off {
+    background: #333842;
+    box-shadow: none;
+}
+
+/* WAN Badge legacy compatibility */
 .npc-wan-row {
     display: flex;
 }
@@ -1321,10 +1439,258 @@
     gap: 4px;
 }
 
+/* ─── SECCIÓN 4: INFRAESTRUCTURA & SERVIDORES ─── */
+.noc-infra-section {
+    margin-bottom: 32px;
+}
+
+.noc-infra-layout {
+    display: grid;
+    grid-template-columns: 360px 1fr;
+    gap: 16px;
+}
+
+.nih-panel {
+    background: rgba(14, 18, 42, 0.65);
+    border: 1px solid rgba(0, 229, 255, 0.18);
+    border-radius: 16px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+.nih-panel-mgmt {
+    border-color: rgba(0, 229, 255, 0.25);
+}
+
+.nih-panel-server {
+    background: linear-gradient(135deg, rgba(16, 20, 52, 0.7) 0%, rgba(9, 11, 26, 0.85) 100%);
+    border-color: rgba(180, 80, 255, 0.3);
+}
+
+.nih-panel-head {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding-bottom: 8px;
+}
+
+.nih-badge {
+    font-size: 0.74rem;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    padding: 3px 10px;
+    border-radius: 6px;
+    display: inline-block;
+    width: fit-content;
+}
+
+.nih-badge-mgmt {
+    color: #00e5ff;
+    background: rgba(0, 229, 255, 0.12);
+    border: 1px solid rgba(0, 229, 255, 0.35);
+}
+
+.nih-badge-server {
+    color: #d18aff;
+    background: rgba(180, 80, 255, 0.15);
+    border: 1px solid rgba(180, 80, 255, 0.4);
+}
+
+.nih-online-nics-pill {
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: #00ff88;
+    background: rgba(0, 255, 136, 0.1);
+    border: 1px solid rgba(0, 255, 136, 0.25);
+    padding: 2px 8px;
+    border-radius: 6px;
+}
+
+.nih-panel-sub {
+    font-size: 0.72rem;
+    color: rgba(255, 255, 255, 0.55);
+}
+
+.nih-mgmt-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex: 1;
+}
+
+.nih-card {
+    background: rgba(14, 18, 42, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.nih-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(0, 229, 255, 0.4);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+.nih-card-online {
+    border-color: rgba(0, 229, 255, 0.25);
+}
+
+.nih-card-offline {
+    opacity: 0.65;
+}
+
+.nih-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.nih-card-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.nih-card-title {
+    font-size: 0.85rem;
+    font-weight: 800;
+    color: #fff;
+}
+
+.nih-ip-badge {
+    font-size: 0.68rem;
+    font-family: monospace;
+    color: #00e5ff;
+    background: rgba(0, 229, 255, 0.08);
+    padding: 1px 6px;
+    border-radius: 4px;
+}
+
+.nih-card-role {
+    font-size: 0.68rem;
+    color: rgba(255, 255, 255, 0.55);
+}
+
+/* Grid de 8 NICs del Servidor */
+.nih-nics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+}
+
+.nih-nic-card {
+    background: rgba(10, 14, 34, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.nih-nic-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(180, 80, 255, 0.4);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+}
+
+.nic-card-up {
+    border-color: rgba(0, 255, 136, 0.25);
+    background: linear-gradient(135deg, rgba(14, 28, 40, 0.75) 0%, rgba(9, 14, 30, 0.85) 100%);
+}
+
+.nic-card-down {
+    opacity: 0.55;
+}
+
+.nic-top-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.nic-name {
+    font-size: 0.78rem;
+    font-weight: 800;
+    color: #fff;
+}
+
+.nic-ip {
+    font-size: 0.65rem;
+    font-family: monospace;
+    color: rgba(255, 255, 255, 0.45);
+}
+
+.nic-led {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.nic-led-on {
+    background: #00ff88;
+    box-shadow: 0 0 6px #00ff88;
+}
+
+.nic-led-off {
+    background: #444;
+}
+
+.nic-role-label {
+    font-size: 0.62rem;
+    color: #d18aff;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.nic-status-row {
+    display: flex;
+    align-items: center;
+}
+
+.nic-status-pill {
+    font-size: 0.58rem;
+    font-weight: 700;
+    padding: 1px 5px;
+    border-radius: 4px;
+}
+
+.pill-link-up {
+    color: #00ff88;
+    background: rgba(0, 255, 136, 0.12);
+    border: 1px solid rgba(0, 255, 136, 0.25);
+}
+
+.pill-link-down {
+    color: rgba(255, 255, 255, 0.4);
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
 /* Responsive */
 @media (max-width: 1200px) {
     .noc-health-grid {
         grid-template-columns: 1fr;
+    }
+    .noc-infra-layout {
+        grid-template-columns: 1fr;
+    }
+    .nih-nics-grid {
+        grid-template-columns: repeat(4, 1fr);
     }
 }
 
@@ -1333,7 +1699,7 @@
         padding: 10px 8px;
     }
     .nfm-grid-row-5 {
-        gap: 5px;
+        gap: 6px;
     }
     .npc-card {
         padding: 6px 4px;
@@ -1345,9 +1711,9 @@
     .npc-ip-tag {
         font-size: 0.58rem;
     }
-    .npc-badge {
-        font-size: 0.55rem;
-        padding: 1px 4px;
+    .npc-lamp-item {
+        font-size: 0.58rem;
+        padding: 1px 3px;
     }
     .npc-traffic-row {
         font-size: 0.62rem;
@@ -1370,17 +1736,25 @@
         text-align: center;
         justify-content: center;
     }
+    .nih-nics-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
 }
 
 @media (max-width: 480px) {
+    .admin-dashboard-container {
+        padding: 12px 8px 36px;
+    }
     .nfm-v-block {
         padding: 8px 6px;
+        gap: 6px;
     }
     .nfm-grid-row-5 {
         gap: 4px;
     }
     .npc-card {
         padding: 5px 3px;
+        gap: 2px;
     }
     .npc-name {
         font-size: 0.68rem;
@@ -1388,7 +1762,21 @@
     .npc-ip-tag {
         display: none;
     }
-    .npc-num {
+    .npc-lamp-status {
+        display: none;
+    }
+    .npc-lamp-item {
+        padding: 1px 2px;
+        gap: 3px;
+    }
+    .npc-lamp-tag {
         font-size: 0.58rem;
+    }
+    .npc-num {
+        font-size: 0.56rem;
+    }
+    .nih-nics-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
     }
 }

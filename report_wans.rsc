@@ -228,7 +228,66 @@
   :set b2 ($b2 . "]")
   /tool fetch url=$clientsUrl mode=https http-method=post http-header-field=$headers http-data=$b2 check-certificate=no keep-result=no
 
-  :log info "NOC Telemetria V5 enviada OK: WANs, Salud y 40 PCs"
+  # ==========================================
+  # 5. ESCANEO INFRAESTRUCTURA (ADMIN, CONTROLADORA Y SERVIDOR 8 NICS)
+  # ==========================================
+  :local bInfra "["
+  :local fInfra true
+  :local infraIps (10,66,201,202,203,204,205,206,207,208)
+  :local infraNames ("PC Administradora","PC Controladora (Caja)","SRV-NIC 01","SRV-NIC 02","SRV-NIC 03","SRV-NIC 04","SRV-NIC 05","SRV-NIC 06","SRV-NIC 07","SRV-NIC 08")
+  :local infraActs ("admin","caja","diskless","diskless","diskless","diskless","diskless","diskless","diskless","diskless")
+
+  :for idx from=0 to=9 do={
+    :local curLastIp ($infraIps->$idx)
+    :local curIp ("192.168.1." . $curLastIp)
+    :local devName ($infraNames->$idx)
+    :local devAct ($infraActs->$idx)
+    :local isUp "false"
+    :local wan "lan_local"
+    :local rxKb 0
+    :local txKb 0
+
+    :if ([:len [/ip arp find address=$curIp interface=bridge_LAN]] > 0) do={
+      :set isUp "true"
+    }
+
+    :if ($isUp = "true") do={
+      :if ($curLastIp < 200) do={
+        :local gConn [:len [/ip firewall connection find src-address~("^" . $curIp . ":") connection-mark="conn_WAN3"]]
+        :local wConn [:len [/ip firewall connection find src-address~("^" . $curIp . ":") connection-mark~"conn_WAN[12]"]]
+        :if ($gConn > 0 and $wConn > 0) do={ :set wan "wan_dual" } else={
+          :if ($gConn > 0) do={ :set wan "wan3_gaming" } else={
+            :set wan "wan1_nav"
+          }
+        }
+      } else={
+        :set wan "lan_diskless"
+      }
+
+      :do {
+        :local qId [/queue simple find target=$curIp]
+        :if ([:len $qId] = 0) do={ :set qId [/queue simple find name=$devName] }
+        :if ([:len $qId] > 0) do={
+          :local qRate [/queue simple get $qId rate]
+          :local sPos [:find $qRate "/"]
+          :if ($sPos > 0) do={
+            :local tBps [:tonum [:pick $qRate 0 $sPos]]
+            :local rBps [:tonum [:pick $qRate ($sPos + 1) [:len $qRate]]]
+            :set txKb ($tBps / 1000)
+            :set rxKb ($rBps / 1000)
+          }
+        }
+      } on-error={}
+    }
+
+    :if ($fInfra = false) do={ :set bInfra ($bInfra . ",") }
+    :set bInfra ($bInfra . "{\"ip\":\"" . $curIp . "\",\"pc_name\":\"" . $devName . "\",\"pc_number\":" . $curLastIp . ",\"online\":" . $isUp . ",\"wan_active\":\"" . $wan . "\",\"actividad\":\"" . $devAct . "\",\"rx_kbps\":" . $rxKb . ",\"tx_kbps\":" . $txKb . "}")
+    :set fInfra false
+  }
+  :set bInfra ($bInfra . "]")
+  /tool fetch url=$clientsUrl mode=https http-method=post http-header-field=$headers http-data=$bInfra check-certificate=no keep-result=no
+
+  :log info "NOC Telemetria V5 enviada OK: WANs, Salud, 40 PCs e Infraestructura"
 } on-error={
   :log warning "Error enviando telemetria completa V5 a Supabase"
 }
